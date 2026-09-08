@@ -333,6 +333,71 @@
   // open with ?debug=1 in the URL then shows participant ID and condition
   const isDebug = qs.get("debug") === "1";
 
+  // ===================================================================
+  // PROLIFIC INTEGRATION
+  // ===================================================================
+  const EXPERIMENT_NAME = "forecasting";
+  // Real sessions go to `forecasting`; ?debug=1 runs go to the scratch table so
+  // testing never mixes practice rows into the real data.
+  const TABLE_NAME      = isDebug ? "test_probe" : "forecasting";
+  // Set this to the completion code from the Prolific study dashboard. While it
+  // is REPLACE_ME the task saves normally but does not redirect to Prolific.
+  const COMPLETION_CODE = "REPLACE_ME";
+
+  // A misconfigured Prolific study sends the literal "{{%PROLIFIC_PID%}}".
+  // Storing that as an id is what produced Courier's UNKNOWN_PID incident
+  // (261 rows collected with no usable participant identity).
+  function pickParam() {
+    for (let i = 0; i < arguments.length; i++) {
+      const v = qs.get(arguments[i]);
+      if (v && v.indexOf("{{") !== 0) return v;
+    }
+    return "";
+  }
+  const STUDY_ID   = pickParam("STUDY_ID", "study_id");
+  const SESSION_ID = pickParam("SESSION_ID", "session_id");
+
+  // Distinguishes page loads by the same participant so a mid-task reload
+  // does not silently overwrite the earlier attempt during reconstruction.
+  const LOAD_TOKEN = (() => {
+    const a = new Uint32Array(2);
+    crypto.getRandomValues(a);
+    return a[0].toString(16) + a[1].toString(16);
+  })();
+
+  let saveSeq = 0;
+
+  // app.py's /save ignores a top-level load_token, so it is carried inside
+  // `data` where it is actually persisted.
+  async function saveToServer(sessionObj, attempts) {
+    attempts = attempts || 4;
+    const body = JSON.stringify({
+      prolific_pid: prolific_pid !== "NA" ? prolific_pid : participant_id,
+      study_id: STUDY_ID,
+      session_id: SESSION_ID,
+      experiment: EXPERIMENT_NAME,
+      table_name: TABLE_NAME,
+      data: { seq: saveSeq++, load_token: LOAD_TOKEN, session: sessionObj }
+    });
+    for (let i = 0; i < attempts; i++) {
+      try {
+        const res = await fetch("/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: body
+        });
+        if (res.ok) return true;
+        console.error("save failed:", res.status, await res.text());
+      } catch (e) {
+        console.error("save threw:", e);
+      }
+      if (i < attempts - 1) {
+        await new Promise(r => setTimeout(r, 800 * Math.pow(2, i)));
+      }
+    }
+    return false;
+  }
+
   function randn() {
     let u = 0, v = 0;
     while (u === 0) u = Math.random();
@@ -931,6 +996,16 @@
       for (let i = 1; i <= N_OBS; i++) {
         await runObservationTrial(i, x[i]);
       }
+
+      // Partial save: a dropout during forecasting still leaves the
+      // observation phase on the server instead of nothing at all.
+      // Deliberately NOT awaited, and given a single attempt: this is a
+      // best-effort bonus, and a slow server must never stall the participant
+      // between phases. The authoritative save happens in finalizeSession().
+      saveToServer(
+        buildSessionExport(null, new Date().toISOString(), "partial_observations"),
+        1
+      );
       for (let k = 1; k <= N_FORECAST; k++) {
         const t = N_OBS + (k - 1);
         await runForecastTrial(k, t);
@@ -964,7 +1039,7 @@
     URL.revokeObjectURL(a.href);
   }
 
-  function buildSessionExport(ccode, ended_wall_iso) {
+  function buildSessionExport(ccode, ended_wall_iso, stage) {
     const bonusUsd = totalScore * BONUS_PER_SCORE;
     const totalPayUsd = BASE_PAY_USD + bonusUsd;
     const seriesValues = x.slice(1); // 0-based array; series_index n is seriesValues[n - 1]
@@ -972,7 +1047,8 @@
     return {
       completion: {
         code: ccode,
-        ended_wall_iso
+        ended_wall_iso,
+        stage: stage || "complete"
       },
       participant: (() => {
         const p = { participant_id };
@@ -1064,19 +1140,47 @@
     });
     el("ccode").textContent = ccode;
 
-    const fullOut = buildSessionExport(ccode, ended_wall_iso);
-    saveSessionToLocalStorage(fullOut);
+    const fullOut = buildSessionExport(ccode, ended_wall_iso, "complete");
+    saveSessionToLocalStorage(fullOut);   // client-side backstop, kept
+    finalizeSession(fullOut);
+  }
+
+  // Save to the server, then hand the participant back to Prolific.
+  async function finalizeSession(fullOut) {
+    const ok = await saveToServer(fullOut);
 
     const debugMetaDone = el("debug-session-meta");
     const debugBox = el("debug-download");
+
     if (isDebug) {
+      // A debug run never redirects to Prolific.
       debugMetaDone.style.display = "block";
       debugBox.style.display = "block";
       el("btn-download").onclick = () => downloadSessionJson(fullOut);
-    } else {
-      debugMetaDone.style.display = "none";
-      debugBox.style.display = "none";
+      console.log("debug run: server save " + (ok ? "succeeded" : "FAILED") +
+                  "; not redirecting to Prolific");
+      return;
     }
+    debugMetaDone.style.display = "none";
+    debugBox.style.display = "none";
+
+    if (!ok) {
+      // Never strand a participant: they keep the code and a way to get paid.
+      el("ccode").insertAdjacentHTML("afterend",
+        '<p class="muted">We could not reach the server. Please email ' +
+        '<a href="mailto:kahanalab@gmail.com">kahanalab@gmail.com</a> with the code ' +
+        'above and the word &ldquo;Prolific&rdquo; in the subject line so we can pay you.</p>');
+      return;
+    }
+
+    if (!COMPLETION_CODE || COMPLETION_CODE === "REPLACE_ME") {
+      console.warn("COMPLETION_CODE is unset; staying on the done screen.");
+      return;
+    }
+
+    // taskFinished is already true, so the beforeunload guard will not fire.
+    window.location.href =
+      "https://app.prolific.com/submissions/complete?cc=" + encodeURIComponent(COMPLETION_CODE);
   }
 
   function makeCompletionCode(payload) {
