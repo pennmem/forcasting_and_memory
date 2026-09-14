@@ -277,14 +277,17 @@
   const ENCODING_SET = ["passive", "forced"];
   const DISTRACTOR_SET = ["animacy", "size"]; 
   const N_OBS = 20;
-  const N_FORECAST = 20;
+  const N_FORECAST = 40;
   const X_MIN = 1;
   const X_MAX = 200;
   const DMIN_SEC = 2;
   const DMAX_SEC = 12;
   const BASE_PAY_USD = 3.00;
-  // Max score is 100 per forecast; scale so a perfect run earns about $5 bonus.
-  const BONUS_PER_SCORE = 5 / (N_FORECAST * 100);
+  // Scaled so typical accuracy yields about $4 bonus.
+  const EXPECTED_SCORE_PER_FORECAST = 29;
+  const TARGET_MEAN_BONUS_USD = 4.00;
+  const BONUS_PER_SCORE = TARGET_MEAN_BONUS_USD / (N_FORECAST * EXPECTED_SCORE_PER_FORECAST);
+  const MAX_BONUS_USD = N_FORECAST * 100 * BONUS_PER_SCORE;
 
   const qs = new URLSearchParams(window.location.search);
   const prolific_pid = qs.get("PROLIFIC_PID") || "NA";
@@ -475,8 +478,8 @@
     }
     const instrPayment = el("instr-payment");
     if (instrPayment) {
-      instrPayment.textContent =
-        `Your cumulative score across all ${N_FORECAST} forecasting rounds is converted linearly into a bonus of roughly $0–$5. You will also receive a base payment of $${BASE_PAY_USD.toFixed(2)}.`;
+    instrPayment.textContent =
+      `Your cumulative score across all ${N_FORECAST} forecasting rounds is converted linearly into a performance bonus (typically around $${TARGET_MEAN_BONUS_USD.toFixed(2)}). You will also receive a base payment of $${BASE_PAY_USD.toFixed(2)}.`;
     }
 
     const instrDistractor = el("instr-distractor");
@@ -936,6 +939,10 @@
     }
     const consentBasePay = el("consent-base-pay");
     if (consentBasePay) consentBasePay.textContent = BASE_PAY_USD.toFixed(2);
+    const consentTypicalBonus = el("consent-typical-bonus");
+    if (consentTypicalBonus) consentTypicalBonus.textContent = TARGET_MEAN_BONUS_USD.toFixed(2);
+    const consentMaxBonus = el("consent-max-bonus");
+    if (consentMaxBonus) consentMaxBonus.textContent = MAX_BONUS_USD.toFixed(2);
 
     el("btn-begin").onclick = () => {
       if (!el("consent").checked) return alert("Please consent to continue.");
