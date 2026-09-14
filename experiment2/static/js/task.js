@@ -3,6 +3,12 @@
 let failedCompetency = false;
 let failureScreenShown = false;
 
+// Questions 1 and 3 are the ones that count toward exclusion. A participant is
+// only screened out if they miss BOTH -- missing just one is fine. failedCompetency
+// (above) is derived from these two once question 3 has been answered.
+let failedQ1 = false;
+let failedQ3 = false;
+
 let fullscreenMonitoringActive = false;
 let fullscreenExitCount = 0;
 let intentionalFullscreenExit = false;
@@ -122,7 +128,7 @@ function buildCompetencyCheck(html) {
     }
   });
 
-  // Question 1: matters
+  // Question 1: matters, but only in combination with question 3 -- see below.
   timeline.push({
     type: "html-button-response",
     stimulus: renderInformationalPage(html.competency_q1),
@@ -137,75 +143,58 @@ function buildCompetencyCheck(html) {
       data.competency_response = data.response;
       data.competency_correct = data.response === 0;
 
-      if (!data.competency_correct) {
-        failedCompetency = true;
-      }
+      failedQ1 = !data.competency_correct;
+
+      // Exclusion is not decided until question 3 has also been answered.
+      data.failed_competency = failedCompetency;
+    }
+  });
+
+  // Question 2: does NOT matter
+  timeline.push({
+    type: "html-button-response",
+    stimulus: renderInformationalPage(html.competency_q2),
+    choices: ["<5 years", "5-15 years", "15-25 years", "25+ years"],
+    data: {
+      phase: "competency_check",
+      competency_question_number: 2,
+      competency_matters_for_exclusion: false,
+      correct_response: 0
+    },
+    on_finish: function(data) {
+      data.competency_response = data.response;
+      data.competency_correct = data.response === 0;
+
+      // Important: question 2 is recorded, but does not change failedCompetency.
+      data.failed_competency = failedCompetency;
+    }
+  });
+
+  // Question 3: matters, but only in combination with question 1. A participant
+  // is screened out only if they missed BOTH question 1 and question 3 --
+  // missing just one is not disqualifying.
+  timeline.push({
+    type: "html-button-response",
+    stimulus: renderInformationalPage(html.competency_q3),
+    choices: ["Never", "Daily", "Weekly", "Monthly"],
+    data: {
+      phase: "competency_check",
+      competency_question_number: 3,
+      competency_matters_for_exclusion: true,
+      correct_response: 0 // Never is correct.
+    },
+    on_finish: function(data) {
+      data.competency_response = data.response;
+      data.competency_correct = data.response === 0;
+
+      failedQ3 = !data.competency_correct;
+      failedCompetency = failedQ1 && failedQ3;
 
       data.failed_competency = failedCompetency;
     }
   });
 
-  // Failure screen after question 1
-  timeline.push(buildCompetencyFailureNode(html.competency_failure));
-
-  // Question 2: does NOT matter
-  timeline.push({
-    timeline: [
-      {
-        type: "html-button-response",
-        stimulus: renderInformationalPage(html.competency_q2),
-        choices: ["<5 years", "5-15 years", "15-25 years", "25+ years"],
-        data: {
-          phase: "competency_check",
-          competency_question_number: 2,
-          competency_matters_for_exclusion: false,
-          correct_response: 0
-        },
-        on_finish: function(data) {
-          data.competency_response = data.response;
-          data.competency_correct = data.response === 0;
-
-          // Important: question 2 is recorded, but does not change failedCompetency.
-          data.failed_competency = failedCompetency;
-        }
-      }
-    ],
-    conditional_function: function() {
-      return !failedCompetency;
-    }
-  });
-
-  // Question 3: matters
-  timeline.push({
-    timeline: [
-      {
-        type: "html-button-response",
-        stimulus: renderInformationalPage(html.competency_q3),
-        choices: ["Never", "Daily", "Weekly", "Monthly"],
-        data: {
-          phase: "competency_check",
-          competency_question_number: 3,
-          competency_matters_for_exclusion: true,
-          correct_response: 0 // Never is correct.
-        },
-        on_finish: function(data) {
-          data.competency_response = data.response;
-          data.competency_correct = data.response === 0;
-
-          if (!data.competency_correct) {
-            failedCompetency = true;
-          }
-
-          data.failed_competency = failedCompetency;
-        }
-      }
-    ],
-    conditional_function: function() {
-      return !failedCompetency;
-    }
-  });
-
-  // Failure screen after question 3
+  // Failure screen, shown only if both question 1 and question 3 were missed.
   timeline.push(buildCompetencyFailureNode(html.competency_failure));
 
   return timeline;
