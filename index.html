@@ -290,7 +290,12 @@
   const MAX_BONUS_USD = N_FORECAST * 100 * BONUS_PER_SCORE;
 
   const qs = new URLSearchParams(window.location.search);
-  const prolific_pid = qs.get("PROLIFIC_PID") || "NA";
+  // Prolific's Preview (and any mistyped study URL) sends the literal
+  // "{{%PROLIFIC_PID%}}"; never accept that as an identity.
+  const prolific_pid = (() => {
+    const v = qs.get("PROLIFIC_PID");
+    return v && v.indexOf("{{") !== 0 ? v : "NA";
+  })();
   const workerId = qs.get("workerId") || "NA";
   const assignmentId = qs.get("assignmentId") || "NA";
   const hitId = qs.get("hitId") || "NA";
