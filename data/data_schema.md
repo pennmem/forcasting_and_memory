@@ -12,6 +12,8 @@ Score on each forecast is `100 * max(0, 1 - |forecast - actual| / sigma_e)`. Bon
 
 Each `distractor_blocks` entry is one timed block after a round. Its `judgments` array lists the word responses in that block (`choice` `A` = left Shift, `B` = right Shift).
 
+**Competency / attention check** (after consent, before instructions): three questions matching experiment 2. Participants are screened out only if they miss **both** Q1 (must click Blue) and Q3 (must click Never). Q2 is recorded but does not affect exclusion. Failures are saved with `completion.stage = "screened_out"` and a `competency` object.
+
 ## Schema
 
 - **`completion`** — `code`, `ended_wall_iso` (time when they finished).

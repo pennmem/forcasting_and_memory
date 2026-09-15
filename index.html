@@ -6,14 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&display=swap">
   <style>
-    body { font-family: "Source Serif 4", system-ui, -apple-system, Segoe UI, Roboto, Arial, serif; max-width: 1000px; margin: 12px auto 36px; padding: 0 16px; }
-    h1 { font-weight: 400; font-size: 1.35rem; }
+    html { font-size: 18px; }
+    body { font-family: "Source Serif 4", system-ui, -apple-system, Segoe UI, Roboto, Arial, serif; max-width: 1000px; margin: 12px auto 36px; padding: 0 16px; line-height: 1.5; }
+    h1 { font-weight: 400; font-size: 1.45rem; }
     .card { border: 1px solid #ddd; border-radius: 14px; padding: 18px 20px; margin: 14px 0; }
     .row { display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; }
     .row > div { min-width: 220px; }
-    label { display:block; margin: 10px 0 6px; }
+    label { display:block; margin: 10px 0 6px; font-size: 1.05rem; }
     input[type="number"]{
-      width: 200px; padding: 8px; border-radius: 10px; border: 1px solid #ccc;
+      width: 200px; padding: 10px; border-radius: 10px; border: 1px solid #ccc;
+      font-size: 1.1rem;
       -moz-appearance: textfield;
       appearance: textfield;
     }
@@ -22,21 +24,21 @@
       -webkit-appearance: none;
       margin: 0;
     }
-    button { padding: 10px 14px; border-radius: 10px; border: 1px solid #ccc; background: #f8f8f8; cursor: pointer; }
+    button { padding: 11px 16px; border-radius: 10px; border: 1px solid #ccc; background: #f8f8f8; cursor: pointer; font-size: 1.05rem; }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .muted { color:#666; font-size: 0.95rem; }
-    .big { font-size: 1.2rem; font-weight: 400; }
+    .muted { color:#666; font-size: 1.05rem; line-height: 1.55; }
+    .big { font-size: 1.35rem; font-weight: 400; }
     .topbar { display:flex; justify-content:space-between; gap: 12px; flex-wrap:wrap; align-items:flex-start; }
     .topbar-right { margin-left:auto; text-align:right; }
     code { background:#f2f2f2; padding:2px 6px; border-radius:6px; }
     .debug-meta { display:none; } 
     .center { text-align:center; }
     .value-big { font-size: 3rem; font-weight: 400; letter-spacing: 0.5px; }
-    .pill { display:inline-block; padding: 2px 10px; border-radius: 999px; background: #f1f1f1; border: 1px solid #e6e6e6; font-size: 0.95rem; }
-    .word { font-size: 2.2rem; font-weight: 400; letter-spacing: 0.5px; }
+    .pill { display:inline-block; padding: 2px 10px; border-radius: 999px; background: #f1f1f1; border: 1px solid #e6e6e6; font-size: 1.05rem; }
+    .word { font-size: 2.35rem; font-weight: 400; letter-spacing: 0.5px; }
     .btnrow { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; align-items:center; margin-top: 14px; }
     .btn-primary { background: #111; color: #fff; border-color:#111; }
-    .btn-choice { min-width: 200px; padding: 12px 14px; border-radius: 12px; background: #fafafa; font-size: 1.1rem; }
+    .btn-choice { min-width: 200px; padding: 12px 14px; border-radius: 12px; background: #fafafa; font-size: 1.15rem; }
     .dist-key-row { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
     .dist-key {
       min-width: 168px;
@@ -94,7 +96,7 @@
     .scale-axis-label {
       position: absolute;
       top: 0;
-      font-size: 0.9rem;
+      font-size: 1rem;
       color: #666;
       line-height: 1.2;
     }
@@ -105,7 +107,7 @@
       top: 0;
       left: 0;
       transform: translateX(-50%);
-      font-size: 0.82rem;
+      font-size: 0.95rem;
       color: #444;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
@@ -115,20 +117,116 @@
     .scale-tick { position:absolute; top: -6px; width: 2px; height: 30px; background: #222; opacity: 0.35; }
     .scale-actual { position:absolute; top: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 999px; background:#111; }
     .scale-forecast { position:absolute; top: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 999px; background:#d11; }
-    .scale-legend { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top: 10px; color:#444; font-size: 0.95rem; }
+    .scale-legend { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-top: 10px; color:#444; font-size: 1.05rem; }
     .legend-dot { display:inline-block; width: 10px; height: 10px; border-radius: 999px; margin-right: 6px; vertical-align: middle; }
-    #screen-feedback .fb-scoreline { font-size: 0.95rem; color: #555; line-height: 1.35; text-align: right; }
+    #screen-feedback .fb-scoreline { font-size: 1.05rem; color: #555; line-height: 1.35; text-align: right; }
     .fc-trial-line { text-align: right; margin-bottom: 14px; }
     .consent-divider { border: none; border-top: 1px solid #e6e6e6; margin: 16px 0; }
     .consent-contact { margin: 18px 0; line-height: 1.5; }
     .consent-contact a { color: inherit; }
     .consent-actions { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-top: 18px; }
     .btn-secondary { background: #fafafa; color: #333; }
+    .competency-letter { text-align: left; line-height: 1.55; }
+    .competency-letter .signoff { margin-top: 12px; }
   </style>
   <script src="./wordpool.js"></script>
 </head>
 <body>
   <div id="screen-consent" class="card"></div>
+
+  <div id="screen-fullscreen" class="card" style="display:none;">
+    <p class="big">Fullscreen Required</p>
+    <p class="muted">
+      The experiment must be completed in fullscreen mode.
+      Please click the button below to enter fullscreen and continue.
+    </p>
+    <div class="btnrow">
+      <button id="btn-enter-fullscreen" class="btn-primary" type="button">Enter fullscreen</button>
+    </div>
+    <p id="fullscreen-err" class="muted center" style="color:#b00; margin-top:12px;"></p>
+  </div>
+
+  <div id="screen-competency-intro" class="card" style="display:none;">
+    <p class="big">Before You Begin</p>
+    <p class="muted">
+      You will now read a short statement from the principal investigator of this study.
+    </p>
+    <div class="btnrow">
+      <button id="btn-competency-intro" class="btn-primary" type="button">Continue</button>
+    </div>
+  </div>
+
+  <div id="screen-competency-q1" class="card" style="display:none;">
+    <div class="competency-letter muted">
+      <p>Dear Participant,</p>
+      <p>
+        The study you are about to begin will provide scientific data on how people learn and
+        remember information. It is very important that you pay attention throughout the task and follow
+        the instructions to the best of your ability. If you take notes, or otherwise disrupt the quality
+        of the data, then we will have to discard it, and you will not be invited to future experiments
+        produced by our laboratory. By analyzing your results, we will know whether you have provided us with valid
+        data, and this may impact your compensation at the end of the experiment, as well as your ability to participate
+        in our lab's future experiments. We ask that you find a quiet room where you can perform this task without
+        any interruptions. If you are willing and able to fulfill the requirements of this study as explained, click
+        the word &lsquo;Blue&rsquo; below. Your data will be of great value to the scientific community and we thank you for
+        your participation.
+      </p>
+      <p class="signoff">
+        Sincerely,<br>
+        <em>Michael J. Kahana, Ph.D.</em><br>
+        Director of the Computational Memory Lab
+      </p>
+    </div>
+    <div class="btnrow">
+      <button type="button" class="btn-choice" data-competency="q1" data-value="0">Blue</button>
+      <button type="button" class="btn-choice" data-competency="q1" data-value="1">Orange</button>
+    </div>
+  </div>
+
+  <div id="screen-competency-q2" class="card" style="display:none;">
+    <p class="muted" style="text-align:left; line-height:1.55;">
+      &ldquo;If any one faculty of our nature may be called more wonderful than the rest,
+      I do think it is memory. There seems something more speakingly incomprehensible in the powers,
+      the failures, the inequalities of memory, than in any other of our intelligence. Please
+      answer the question below honestly, but for the next question, pick &ldquo;never&rdquo;. The memory is
+      sometimes so retentive, so serviceable, so obedient, at others, so bewildered and so weak,
+      and at others again, so tyrannic, so beyond control! We are to be sure a miracle every way,
+      but our powers of recollecting and of forgetting, do seem peculiarly past finding out.&rdquo;<br>
+      &mdash;Jane Austen
+    </p>
+    <p class="big" style="margin-top:16px;">How old is your oldest memory?</p>
+    <div class="btnrow">
+      <button type="button" class="btn-choice" data-competency="q2" data-value="0">&lt;5 years</button>
+      <button type="button" class="btn-choice" data-competency="q2" data-value="1">5-15 years</button>
+      <button type="button" class="btn-choice" data-competency="q2" data-value="2">15-25 years</button>
+      <button type="button" class="btn-choice" data-competency="q2" data-value="3">25+ years</button>
+    </div>
+  </div>
+
+  <div id="screen-competency-q3" class="card" style="display:none;">
+    <p class="big">How often do you realize you&rsquo;ve forgotten something?</p>
+    <div class="btnrow">
+      <button type="button" class="btn-choice" data-competency="q3" data-value="0">Never</button>
+      <button type="button" class="btn-choice" data-competency="q3" data-value="1">Daily</button>
+      <button type="button" class="btn-choice" data-competency="q3" data-value="2">Weekly</button>
+      <button type="button" class="btn-choice" data-competency="q3" data-value="3">Monthly</button>
+    </div>
+  </div>
+
+  <div id="screen-competency-fail" class="card" style="display:none;">
+    <p class="big">Unable to continue</p>
+    <p class="muted">
+      The preceding page was designed to screen participants who are not carefully paying attention.
+      You did not answer a required question correctly, so you cannot continue with this experiment.
+      Your response has been recorded.
+    </p>
+    <p class="muted">
+      Click below to return to Prolific and submit.
+    </p>
+    <div class="btnrow">
+      <button id="btn-competency-exit" class="btn-primary" type="button">Exit</button>
+    </div>
+  </div>
 
   <div id="screen-instructions" class="card" style="display:none;">
     <div class="topbar">
@@ -351,6 +449,9 @@
   // Set this to the completion code from the Prolific study dashboard. While it
   // is REPLACE_ME the task saves normally but does not redirect to Prolific.
   const COMPLETION_CODE = "CZAN4FN9";
+  // Separate Prolific completion code for attention-check failures (screen-out).
+  // Create this in the Prolific study dashboard alongside the normal code.
+  const SCREENOUT_CODE = "REPLACE_ME";
 
   // A misconfigured Prolific study sends the literal "{{%PROLIFIC_PID%}}".
   // Storing that as an id is what produced Courier's UNKNOWN_PID incident
@@ -440,6 +541,102 @@
   let taskStarted = false;
   let taskFinished = false;
 
+  // Attention / competency check (same rule as experiment2):
+  // screen out only if BOTH Q1 and Q3 are missed. Q2 is recorded but ignored.
+  let failedQ1 = false;
+  let failedQ3 = false;
+  let failedCompetency = false;
+  const competencyResponses = [];
+
+  // Fullscreen requirement (same idea as experiment2)
+  let fullscreenMonitoringActive = false;
+  let intentionalFullscreenExit = false;
+  let fullscreenExitCount = 0;
+
+  function isFullscreen() {
+    return !!(
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement
+    );
+  }
+
+  function requestFullscreen() {
+    const elDoc = document.documentElement;
+    try {
+      if (elDoc.requestFullscreen) return Promise.resolve(elDoc.requestFullscreen());
+      if (elDoc.webkitRequestFullscreen) {
+        elDoc.webkitRequestFullscreen();
+        return Promise.resolve();
+      }
+      if (elDoc.msRequestFullscreen) {
+        elDoc.msRequestFullscreen();
+        return Promise.resolve();
+      }
+    } catch (e) {
+      return Promise.reject(e);
+    }
+    return Promise.reject(new Error("Fullscreen API not available"));
+  }
+
+  function exitFullscreen() {
+    intentionalFullscreenExit = true;
+    fullscreenMonitoringActive = false;
+    try {
+      if (document.exitFullscreen) return document.exitFullscreen();
+      if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+      if (document.msExitFullscreen) return document.msExitFullscreen();
+    } catch (_) {}
+    return Promise.resolve();
+  }
+
+  function hideFullscreenWarning() {
+    const overlay = document.querySelector("#fullscreen-warning-overlay");
+    if (overlay) overlay.remove();
+  }
+
+  function showFullscreenWarning() {
+    if (document.querySelector("#fullscreen-warning-overlay")) return;
+    const overlay = document.createElement("div");
+    overlay.id = "fullscreen-warning-overlay";
+    overlay.innerHTML = `
+      <div style="
+        position: fixed; inset: 0; background: rgba(255,255,255,0.96);
+        z-index: 999999; display: flex; align-items: center; justify-content: center;
+        text-align: center; font-family: inherit;
+      ">
+        <div style="max-width: 640px; padding: 28px 32px; border: 2px solid #b00020; background: #fff; border-radius: 12px;">
+          <p class="big" style="margin:0 0 10px;">Fullscreen Required</p>
+          <p class="muted" style="margin:0 0 18px; font-size:1.15rem; line-height:1.5;">
+            You have exited fullscreen mode. Please return to fullscreen to continue the experiment.
+          </p>
+          <button id="return-fullscreen-button" class="btn-primary" type="button">Return to fullscreen</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    document.getElementById("return-fullscreen-button").addEventListener("click", () => {
+      requestFullscreen().catch(() => {});
+    });
+  }
+
+  function onFullscreenChange() {
+    if (isFullscreen()) {
+      hideFullscreenWarning();
+      intentionalFullscreenExit = false;
+      return;
+    }
+    if (fullscreenMonitoringActive && !intentionalFullscreenExit) {
+      fullscreenExitCount += 1;
+      showFullscreenWarning();
+    }
+  }
+
+  document.addEventListener("fullscreenchange", onFullscreenChange);
+  document.addEventListener("webkitfullscreenchange", onFullscreenChange);
+  document.addEventListener("mozfullscreenchange", onFullscreenChange);
+  document.addEventListener("MSFullscreenChange", onFullscreenChange);
+
   const sessionLog = [];
   const screenTimings = [];
   let currentScreenId = null;
@@ -515,6 +712,12 @@
   function hideAllScreens() {
     const ids = [
       "screen-consent",
+      "screen-fullscreen",
+      "screen-competency-intro",
+      "screen-competency-q1",
+      "screen-competency-q2",
+      "screen-competency-q3",
+      "screen-competency-fail",
       "screen-instructions",
       "screen-observe",
       "screen-forecast-intro",
@@ -951,7 +1154,7 @@
 
     el("btn-begin").onclick = () => {
       if (!el("consent").checked) return alert("Please consent to continue.");
-      showScreen("screen-instructions");
+      showScreen("screen-fullscreen");
     };
 
     el("btn-consent-exit").onclick = () => {
@@ -960,6 +1163,100 @@
       } catch (_) {}
       alert("You may close this browser tab to exit the study.");
     };
+  }
+
+  function recordCompetency(questionNumber, response, correctResponse, matters) {
+    const correct = Number(response) === Number(correctResponse);
+    competencyResponses.push({
+      question: questionNumber,
+      response: Number(response),
+      correct_response: Number(correctResponse),
+      correct,
+      matters_for_exclusion: matters,
+      timestamp: new Date().toISOString()
+    });
+    return correct;
+  }
+
+  function finishScreenedOut() {
+    taskFinished = true;
+    logSessionEvent("competency_failed", {
+      failed_q1: failedQ1,
+      failed_q3: failedQ3
+    });
+    exitFullscreen();
+    showScreen("screen-competency-fail");
+
+    const ended_wall_iso = new Date().toISOString();
+    const fullOut = buildSessionExport(null, ended_wall_iso, "screened_out");
+    saveSessionToLocalStorage(fullOut);
+    // Best-effort server save; do not block exit on failure.
+    saveToServer(fullOut, 2);
+  }
+
+  function exitAfterScreenout() {
+    if (isDebug) {
+      alert("Debug: attention check failed. Not redirecting to Prolific.");
+      return;
+    }
+    if (!SCREENOUT_CODE || SCREENOUT_CODE === "REPLACE_ME") {
+      alert("You may close this browser tab and return to Prolific to submit.");
+      try { window.close(); } catch (_) {}
+      return;
+    }
+    window.location.href =
+      "https://app.prolific.com/submissions/complete?cc=" + encodeURIComponent(SCREENOUT_CODE);
+  }
+
+  function wireCompetencyHandlers() {
+    el("btn-enter-fullscreen").onclick = async () => {
+      el("fullscreen-err").textContent = "";
+      try {
+        await requestFullscreen();
+      } catch (e) {
+        console.warn(e);
+        el("fullscreen-err").textContent =
+          "Could not enter fullscreen. Please allow fullscreen for this site and try again (Safari may block keyboard input in fullscreen).";
+        return;
+      }
+      fullscreenMonitoringActive = true;
+      intentionalFullscreenExit = false;
+      logSessionEvent("enter_fullscreen", {});
+      showScreen("screen-competency-intro");
+    };
+
+    el("btn-competency-intro").onclick = () => showScreen("screen-competency-q1");
+
+    document.querySelectorAll("[data-competency='q1']").forEach((btn) => {
+      btn.onclick = () => {
+        const ok = recordCompetency(1, btn.getAttribute("data-value"), 0, true);
+        failedQ1 = !ok;
+        showScreen("screen-competency-q2");
+      };
+    });
+
+    document.querySelectorAll("[data-competency='q2']").forEach((btn) => {
+      btn.onclick = () => {
+        // Q2 does not affect exclusion.
+        recordCompetency(2, btn.getAttribute("data-value"), 0, false);
+        showScreen("screen-competency-q3");
+      };
+    });
+
+    document.querySelectorAll("[data-competency='q3']").forEach((btn) => {
+      btn.onclick = () => {
+        const ok = recordCompetency(3, btn.getAttribute("data-value"), 0, true);
+        failedQ3 = !ok;
+        failedCompetency = failedQ1 && failedQ3;
+        if (failedCompetency) {
+          finishScreenedOut();
+        } else {
+          showScreen("screen-instructions");
+        }
+      };
+    });
+
+    el("btn-competency-exit").onclick = exitAfterScreenout;
   }
 
   async function loadConsentScreen() {
@@ -972,9 +1269,11 @@
       console.error(e);
       host.innerHTML =
         "<p class=\"muted\">Could not load consent text. Please refresh the page (this requires serving the files over http, not opening the HTML file directly).</p>";
+      wireCompetencyHandlers();
       return;
     }
     wireConsentHandlers();
+    wireCompetencyHandlers();
   }
 
   window.addEventListener("keydown", (ev) => {
@@ -1099,6 +1398,18 @@
       observations: observationTrials,
       forecasts: forecastTrials,
       distractor_blocks: distractorBlocks,
+      competency: {
+        failed: failedCompetency,
+        failed_q1: failedQ1,
+        failed_q3: failedQ3,
+        responses: competencyResponses,
+        rule: "Screened out only if both Q1 and Q3 are incorrect. Q2 is recorded but ignored."
+      },
+      fullscreen: {
+        exit_count: fullscreenExitCount,
+        monitoring_active: fullscreenMonitoringActive,
+        currently_fullscreen: isFullscreen()
+      },
       diagnostics: {
         session_log: sessionLog,
         screen_timings: screenTimings,
@@ -1135,6 +1446,7 @@
   function finish() {
     taskFinished = true;
     logSessionEvent("task_finished", { total_score: totalScore });
+    exitFullscreen();
     showScreen("screen-done");
 
     const bonusUsd = totalScore * BONUS_PER_SCORE;
