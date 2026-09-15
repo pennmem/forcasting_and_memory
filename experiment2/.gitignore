@@ -12,3 +12,8 @@ __pycache__/
 
 # psiTurk leftovers
 .psiturk_history
+
+# Participant data exports carry real Prolific IDs and this repository is
+# public. Never commit them. The five CSVs already tracked here predate this
+# rule and contain only debug runs; git keeps tracking them regardless.
+db_exports/*.csv
