@@ -1178,6 +1178,9 @@
     return correct;
   }
 
+  // Promise for the screened_out server save; exitAfterScreenout() awaits it.
+  let screenoutSave = null;
+
   function finishScreenedOut() {
     taskFinished = true;
     logSessionEvent("competency_failed", {
@@ -1190,11 +1193,14 @@
     const ended_wall_iso = new Date().toISOString();
     const fullOut = buildSessionExport(null, ended_wall_iso, "screened_out");
     saveSessionToLocalStorage(fullOut);
-    // Best-effort server save; do not block exit on failure.
-    saveToServer(fullOut, 2);
+    // Start the server save now, while the participant reads the fail screen.
+    // exitAfterScreenout() waits on this before navigating, because a redirect
+    // cancels any request still in flight -- and a fast click would lose the
+    // screened_out record. The wait is capped so a slow server never traps anyone.
+    screenoutSave = saveToServer(fullOut, 2);
   }
 
-  function exitAfterScreenout() {
+  async function exitAfterScreenout() {
     if (isDebug) {
       alert("Debug: attention check failed. Not redirecting to Prolific.");
       return;
@@ -1203,6 +1209,11 @@
       alert("You may close this browser tab and return to Prolific to submit.");
       try { window.close(); } catch (_) {}
       return;
+    }
+    if (screenoutSave) {
+      const btn = el("btn-competency-exit");
+      if (btn) btn.disabled = true;
+      await Promise.race([screenoutSave, new Promise(r => setTimeout(r, 5000))]);
     }
     window.location.href =
       "https://app.prolific.com/submissions/complete?cc=" + encodeURIComponent(SCREENOUT_CODE);
