@@ -1,0 +1,9 @@
+metric,rho,1. As-is,2. No outliers,"3. No outliers, MAE<=30"
+n_participants,0.6 / 0.7,20 / 17,20 / 17,17 / 14
+baseline overreaction: mean rho_excess,0.6,0.116 (p=0.1247),0.093 (p=0.0919*),0.191 (p=0.0004***)
+baseline overreaction: mean rho_excess,0.7,-0.016 (p=0.5504),-0.088 (p=0.9617),-0.040 (p=0.8663)
+post-switch gamma (x_match effect),0.6,0.180 (p=0.0606*),0.092 (p=0.1250),0.118 (p=0.0016***)
+post-switch gamma (x_match effect),0.7,0.707 (p=0.1580),0.074 (p=0.1155),-0.008 (p=0.5831)
+reinstatement decay: gamma_0,0.6,0.151 (p=0.1445),0.059 (p=0.3070),0.115 (p=0.0162**)
+reinstatement decay: gamma_0,0.7,0.631 (p=0.1613),0.084 (p=0.0874*),0.006 (p=0.4531)
+gamma comparison: rho 0.7 - rho 0.6,--,0.526 (p=0.2287),-0.017 (p=0.5698),-0.126 (p=0.9887)
