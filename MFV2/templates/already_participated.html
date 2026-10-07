@@ -1,0 +1,50 @@
+{% extends 'layouts/layout.html' %}
+{#
+  Shown when a Prolific ID that already finished (or was screened out) comes
+  back. Replaces psiTurk error 1010.
+#}
+
+{% block title %}You have already taken part{% endblock %}
+
+{% block body %}
+  <div id="container-error">
+    <div id="error">
+      <h1>You have already taken part</h1>
+      <hr />
+
+      <div class="alert alert-warning">
+        <p>
+          Our records show that you have already completed this study, or an
+          earlier version of it.
+        </p>
+        <p>
+          Because this experiment depends on participants being unfamiliar with
+          the task, you cannot take part a second time.
+        </p>
+      </div>
+
+      {% if completion_url %}
+        <p>
+          If you are seeing this after finishing the study and your submission
+          was not registered, use this link:
+        </p>
+        <p>
+          <a class="btn btn-success" href="{{ completion_url }}">
+            Complete my submission on Prolific
+          </a>
+        </p>
+      {% else %}
+        <p>
+          Please return this study on Prolific so it can be offered to someone
+          else. Returning a study does not affect your approval rate.
+        </p>
+      {% endif %}
+
+      <hr />
+      <p>
+        Questions? Email
+        <a href="mailto:{{ contact_address }}">{{ contact_address }}</a>.
+      </p>
+    </div>
+  </div>
+{% endblock %}

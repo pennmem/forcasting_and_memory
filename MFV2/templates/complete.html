@@ -1,0 +1,44 @@
+{% extends 'layouts/layout.html' %}
+{#
+  Fallback completion page. The task normally redirects straight to Prolific;
+  participants only land here if that redirect did not fire, so the job of this
+  page is to get them to the submission link.
+#}
+
+{% block title %}Study Complete{% endblock %}
+
+{% block body %}
+  <div id="container-not-an-ad">
+    <div class="well">
+      <h1>Thank you for your participation</h1>
+      <hr />
+
+      {% if completion_url %}
+        <p>
+          Your responses have been recorded. Your submission is not registered
+          on Prolific until you follow the link below.
+        </p>
+
+        <p>
+          <a class="btn btn-success btn-lg" href="{{ completion_url }}">
+            Complete my submission on Prolific
+          </a>
+        </p>
+      {% else %}
+        <p>
+          Your responses have been recorded, but we could not generate your
+          Prolific completion link. Please email
+          <a href="mailto:{{ contact_address }}">{{ contact_address }}</a>
+          with your Prolific ID so we can approve your submission manually.
+        </p>
+      {% endif %}
+
+      <hr />
+      <p>
+        Your data makes an important contribution to our understanding of human
+        memory and forecasting. If you have questions about this research,
+        contact <a href="mailto:{{ contact_address }}">{{ contact_address }}</a>.
+      </p>
+    </div>
+  </div>
+{% endblock %}

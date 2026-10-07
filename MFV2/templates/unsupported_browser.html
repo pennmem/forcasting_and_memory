@@ -1,0 +1,33 @@
+{% extends 'layouts/layout.html' %}
+{# Replaces psiTurk error 1014. #}
+
+{% block title %}Unsupported browser or device{% endblock %}
+
+{% block body %}
+  <div id="container-error">
+    <div id="error">
+      <h1>Unsupported browser or device</h1>
+      <hr />
+
+      <div class="alert alert-danger">
+        <p>
+          This study needs a desktop or laptop computer and cannot be completed
+          on a phone or tablet. It also requires fullscreen mode, which some
+          browsers restrict.
+        </p>
+        <p>
+          Please reopen the study link in Chrome or Firefox on a computer. If
+          you cannot do that, return the study on Prolific so it can be offered
+          to someone else &mdash; returning a study does not affect your
+          approval rate.
+        </p>
+      </div>
+
+      <hr />
+      <p>
+        Questions? Email
+        <a href="mailto:{{ contact_address }}">{{ contact_address }}</a>.
+      </p>
+    </div>
+  </div>
+{% endblock %}

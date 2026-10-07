@@ -1,0 +1,123 @@
+{% extends 'layouts/layout.html' %}
+{#
+  Informed consent. Reached directly from the Prolific study link, in the same
+  tab -- there is no pop-up window and no separate ad page, because the Prolific
+  study listing already serves as the advertisement.
+
+  The Prolific identifiers arrive as query parameters and are carried through to
+  /exp on the Continue button.
+#}
+
+{% block title %}Memory and Forecasting Study - Informed Consent{% endblock %}
+
+{% block head %}
+  {{ super() }}
+  <style>
+    @media print {
+      body * { visibility: hidden; }
+      .legal, .legal * { visibility: visible; }
+      .legal { position: absolute; left: 0; top: 0; overflow: visible; }
+    }
+  </style>
+{% endblock %}
+
+{% block body %}
+  <div id="container-consent">
+    <div id="consent">
+      <h1>Welcome!</h1>
+      <hr />
+
+      <div class="legal well">
+        <p>
+          You have been invited to take part in a research study being conducted
+          by the Computational Memory Lab at the University of Pennsylvania. In
+          this study, you will be asked to remember numbers and make a forecast
+          about what the next number could be{% if distractors_enabled %}, all the
+          while performing simple yes/no judgment tasks, answered with the Shift
+          keys (right Shift for yes, left Shift for no){% endif %}. Full
+          instructions will be provided before the study.
+        </p>
+
+        <p>
+          The experiment will last approximately 20 minutes. The only minor risk
+          of the study is fatigue from completing the task. You must participate
+          in all trials of the experiment (i.e. making forecasts when prompted{% if distractors_enabled %},
+          completing judgment tasks{% endif %}) for us to approve your submission on
+          Prolific. We review and approve submissions within two business days.
+        </p>
+
+        <p>
+          You will be paid a base payment of
+          <strong>${{ "%.2f"|format(flat_fee) }}</strong> through Prolific, plus
+          a performance bonus of approximately
+          <strong>${{ "%.2f"|format(expected_bonus) }}</strong>, for an expected
+          total of about
+          <strong>${{ "%.2f"|format(expected_total) }}</strong>. Bonuses are paid
+          through Prolific within two business days of approval.
+        </p>
+
+        <p>
+          The experiment runs in fullscreen mode and must be completed on a
+          desktop or laptop computer. Please close other applications and find a
+          quiet place where you can work without interruption.
+        </p>
+
+        <p>
+          Your participation is completely voluntary, and you may stop the
+          experiment at any time. If you stop early, please return your
+          submission on Prolific. Your responses are stored under your Prolific
+          ID and are analyzed and reported only in aggregate. If you have any
+          questions about your rights as a research participant, or about this
+          study in general, please contact the principal investigator:
+        </p>
+
+        <center>
+          <p>
+            <b>Michael Kahana, Ph.D.</b><br />
+            University of Pennsylvania<br />
+            Department of Psychology<br />
+            425 S. University Ave.<br />
+            Levin Building, Room 263<br />
+            Philadelphia, PA 19104<br />
+            <a href="mailto:{{ contact_address }}">{{ contact_address }}</a>
+          </p>
+        </center>
+
+        <p>
+          By clicking the 'Continue' button below and beginning the study, you
+          are indicating that you have read and understand the text above, and
+          that you consent to participate in the study and have your response
+          data used for research purposes.
+        </p>
+
+        <p>
+          Please note that the study may take several seconds to initialize, and
+          may not appear immediately upon pressing 'Continue'.
+        </p>
+
+        <button type="button" class="btn btn-default btn-sm" onclick="window.print();">
+          <span class="glyphicon glyphicon-print"></span> Print a copy of this
+        </button>
+      </div>
+
+      {% if not prolific_pid %}
+        <div class="alert alert-warning">
+          <strong>No Prolific ID found in this link.</strong>
+          You are about to start a debug session, which will not be paid. If you
+          are a participant, please return to Prolific and open the study from
+          there.
+        </div>
+      {% endif %}
+
+      <center>
+        <a class="btn btn-primary btn-lg"
+           href="{{ url_for('experiment.experiment',
+                            PROLIFIC_PID=prolific_pid,
+                            STUDY_ID=study_id,
+                            SESSION_ID=session_id) }}">
+          <span class="glyphicon glyphicon-ok"></span> Continue
+        </a>
+      </center>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'layouts/layout.html' %}
+{#
+  Main experiment page. The server has already allocated a counterbalance slot
+  by the time this renders; everything the task needs comes through
+  window.TASK_CONFIG rather than through separate Jinja globals.
+#}
+
+{% block title %}Memory and Forecasting Study{% endblock %}
+
+{% block head %}
+  {{ super() }}
+
+  <script src="/static/lib/jquery-3.4.1.min.js" type="text/javascript"></script>
+
+  <!-- Session parameters and task settings, supplied by the server from config.ini -->
+  <script type="application/json" id="task-config">{{ task_config | tojson }}</script>
+  <script type="text/javascript">
+    window.TASK_CONFIG = JSON.parse(document.getElementById("task-config").textContent);
+  </script>
+
+  <!-- jsPsych core and plugins -->
+  <script src="/static/lib/jspsych/jspsych.js" type="text/javascript"></script>
+  <script src="/static/lib/jspsych/plugins/jspsych-html-button-response.js" type="text/javascript"></script>
+  <script src="/static/lib/jspsych/plugins/jspsych-html-keyboard-response.js" type="text/javascript"></script>
+  <script src="/static/lib/jspsych/plugins/jspsych-survey-text.js" type="text/javascript"></script>
+  <script src="/static/lib/jspsych/plugins/jspsych-fullscreen.js" type="text/javascript"></script>
+  <link href="/static/lib/jspsych/css/jspsych.css" rel="stylesheet" type="text/css" />
+
+  <!-- Data recording client and shared helpers -->
+  <script src="/static/js/prolific.js" type="text/javascript"></script>
+  <script src="/static/js/utils.js" type="text/javascript"></script>
+{% endblock %}
+
+
+{% block body %}
+  <noscript>
+    <h1>Warning: JavaScript seems to be disabled</h1>
+    <p>This study requires that JavaScript be enabled in your browser.</p>
+    <p>
+      Please enable JavaScript and reload this page, or return the study on
+      Prolific so it can be offered to someone else.
+    </p>
+  </noscript>
+
+  {% if task_config.debugMode %}
+    <div style="position: fixed; left: 8px; bottom: 8px; z-index: 99999;
+                background: #ffe08a; padding: 4px 10px; font-size: 13px;
+                border-radius: 4px; font-family: monospace;">
+      DEBUG SESSION &mdash; slot {{ task_config.slot }} &mdash; not a real participant
+    </div>
+  {% endif %}
+
+  <!-- jsPsych renders the experiment inside this div -->
+  <div id="jspsych-target"></div>
+
+  <script src="/static/js/task.js" type="text/javascript"></script>
+{% endblock %}

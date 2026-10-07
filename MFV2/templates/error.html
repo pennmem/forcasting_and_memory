@@ -1,0 +1,39 @@
+{% extends 'layouts/layout.html' %}
+{#
+  Generic error page. psiTurk's version enumerated MTurk-specific error numbers
+  (1008 repeat worker, 1014 bad browser, ...); those cases now have their own
+  templates, so this one just renders whatever the route passed in.
+#}
+
+{% block title %}Sorry, there was a problem{% endblock %}
+
+{% block body %}
+  <div id="container-error">
+    <div id="error">
+      <h1>Sorry, there was a problem</h1>
+      <hr />
+
+      <div class="alert alert-danger">
+        <p><strong>{{ message }}</strong></p>
+        {% if detail %}<p>{{ detail }}</p>{% endif %}
+
+        <p>
+          If you believe you have reached this page in error, please email
+          <a href="mailto:{{ contact_address }}">{{ contact_address }}</a> and
+          include your Prolific ID.
+        </p>
+      </div>
+
+      {% if show_return_link %}
+        <p>
+          If you cannot continue, please use the "Return submission" option on
+          Prolific so the study can be offered to someone else. Returning a
+          study does not affect your approval rate.
+        </p>
+      {% endif %}
+
+      <hr />
+      <h3>Our sincere apologies!</h3>
+    </div>
+  </div>
+{% endblock %}
