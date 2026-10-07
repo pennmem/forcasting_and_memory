@@ -1,0 +1,7 @@
+MFV1/experiment2/private/
+*.db
+*.log
+.DS_Store
+__pycache__/
+.venv/
+.env
