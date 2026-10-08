@@ -202,6 +202,18 @@ class Config:
         return self.get_bool("Task Parameters", "allow_debug_mode", False)
 
     @property
+    def max_per_slot(self):
+        return self.get_int("Task Parameters", "max_assignments_per_slot", 1)
+
+    @property
+    def never_turn_away(self):
+        return self.get_bool("Task Parameters", "never_turn_away", False)
+
+    @property
+    def reclaim_idle_minutes(self):
+        return self.get_int("Task Parameters", "reclaim_idle_minutes", 10)
+
+    @property
     def cutoff_minutes(self):
         return self.get_int("Task Parameters", "cutoff_time", 90)
 

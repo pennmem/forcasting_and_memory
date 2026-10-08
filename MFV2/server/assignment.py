@@ -65,19 +65,90 @@ def release_abandoned_slots(session, cutoff_minutes):
     return len(stale)
 
 
-def _pick_least_used_slot(session):
+def reclaim_longest_idle_slot(session, idle_minutes, always=False):
+    """Free the slot of the longest-idle in-progress participant, if any.
+
+    Used when every slot is held and someone new arrives (for instance, the
+    replacement Prolific offers after another participant returned the study).
+    Unlike `release_abandoned_slots`, which waits out the full cutoff, this
+    only needs the holder to have been idle for `idle_minutes`; the task sends
+    data every few seconds while it runs, so an in-progress participant is never
+    idle that long.
+
+    With `always`, if nobody has been idle that long the longest-idle in-progress
+    holder is reclaimed anyway, so a new participant is never turned away unless
+    every slot belongs to someone who has finished. That can only take a slot
+    from someone still working if more people are in the study than there are
+    slots. Returns True if a slot was freed.
+    """
+    stmt = select(Participant).where(Participant.status.in_((Status.ALLOCATED, Status.STARTED)))
+
+    if idle_minutes and idle_minutes > 0:
+        deadline = utcnow() - dt.timedelta(minutes=idle_minutes)
+        preferred = stmt.where(Participant.last_seen < deadline)
+    elif always:
+        preferred = stmt
+    else:
+        return False
+
+    holder = (
+        session.execute(preferred.order_by(Participant.last_seen.asc()).limit(1))
+        .scalars()
+        .first()
+    )
+
+    if holder is None and always:
+        holder = (
+            session.execute(stmt.order_by(Participant.last_seen.asc()).limit(1))
+            .scalars()
+            .first()
+        )
+
+    if holder is None:
+        return False
+
+    holder.status = Status.ABANDONED
+    slot = session.get(Slot, holder.slot)
+    if slot is not None and slot.times_assigned > 0:
+        slot.times_assigned -= 1
+    session.flush()
+    return True
+
+
+def revive_if_abandoned(session, participant):
+    """Put a participant back in progress if their slot was reclaimed but they resumed.
+
+    Their data is kept. The slot may meanwhile have been given to someone else,
+    so it can briefly hold two participants; that is better than discarding a
+    session that is genuinely still running.
+    """
+    if participant.status != Status.ABANDONED:
+        return False
+
+    participant.status = Status.STARTED
+    slot = session.get(Slot, participant.slot)
+    if slot is not None:
+        slot.times_assigned += 1
+    session.flush()
+    return True
+
+
+def _pick_least_used_slot(session, max_per_slot=0):
     """Return the active slot with the fewest assignments.
 
     Ties are broken by slot number rather than randomly: with a fixed
     assignments.json this gives a deterministic, reproducible fill order and
     the balance is identical either way.
+
+    With `max_per_slot` > 0, a slot that already holds that many participants
+    (in progress or finished) is not eligible. Without the cap, once every slot
+    has been handed out the picker simply wraps around to slot 0, so a slot
+    whose participant walked away stays "taken" while other slots are used twice.
     """
-    stmt = (
-        select(Slot)
-        .where(Slot.active.is_(True))
-        .order_by(Slot.times_assigned.asc(), Slot.slot.asc())
-        .limit(1)
-    )
+    stmt = select(Slot).where(Slot.active.is_(True))
+    if max_per_slot and max_per_slot > 0:
+        stmt = stmt.where(Slot.times_assigned < max_per_slot)
+    stmt = stmt.order_by(Slot.times_assigned.asc(), Slot.slot.asc()).limit(1)
 
     if session.bind.dialect.name == "postgresql":
         # SQLite serializes writers already (BEGIN IMMEDIATE); Postgres needs
@@ -110,6 +181,9 @@ def assign_participant(
     ip_address=None,
     user_agent=None,
     forced_slot=None,
+    max_per_slot=0,
+    reclaim_idle_minutes=0,
+    never_turn_away=False,
 ):
     """Return the `Participant` row for this visit, creating one if needed.
 
@@ -147,9 +221,19 @@ def assign_participant(
         if slot is None:
             raise NoSlotsAvailable(f"Slot {forced_slot} does not exist")
     else:
-        slot = _pick_least_used_slot(session)
+        slot = _pick_least_used_slot(session, max_per_slot)
+        if (
+            slot is None
+            and max_per_slot
+            and reclaim_longest_idle_slot(session, reclaim_idle_minutes, never_turn_away)
+        ):
+            slot = _pick_least_used_slot(session, max_per_slot)
         if slot is None:
-            raise NoSlotsAvailable("No active counterbalance slots configured")
+            raise NoSlotsAvailable(
+                "Every counterbalance slot is taken"
+                if max_per_slot
+                else "No active counterbalance slots configured"
+            )
 
     slot.times_assigned += 1
 

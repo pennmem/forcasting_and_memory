@@ -33,6 +33,7 @@ from .assignment import (
     AlreadyParticipated,
     NoSlotsAvailable,
     assign_participant,
+    revive_if_abandoned,
     slot_summary,
 )
 from .models import Participant, Slot, Status, TrialData, utcnow
@@ -210,6 +211,9 @@ def experiment():
                 ip_address=client_ip(),
                 user_agent=request.user_agent.string,
                 forced_slot=config.task_settings.get("debug_slot"),
+                max_per_slot=config.max_per_slot,
+                reclaim_idle_minutes=config.reclaim_idle_minutes,
+                never_turn_away=config.never_turn_away,
             )
         except AlreadyParticipated as exc:
             session.rollback()
@@ -317,6 +321,8 @@ def api_data():
         if participant is None:
             return jsonify({"status": "error", "message": "Unknown participant"}), 404
 
+        revive_if_abandoned(session, participant)
+
         existing = (
             session.query(TrialData)
             .filter(
@@ -368,6 +374,8 @@ def api_complete():
         if participant is None:
             return jsonify({"status": "error", "message": "Unknown participant"}), 404
 
+        revive_if_abandoned(session, participant)
+
         # Store any trials the browser is still holding before scoring.
         trailing = payload.get("trials") or []
         if trailing:
@@ -392,6 +400,8 @@ def api_complete():
                     )
                 )
             session.flush()
+
+        already_finished = participant.is_terminal()
 
         failed_competency = bool(payload.get("failedCompetency"))
         participant.failed_competency = failed_competency
@@ -435,6 +445,13 @@ def api_complete():
             slot = session.get(Slot, participant.slot)
             if slot is not None:
                 slot.times_completed += 1
+        elif participant.status == Status.SCREENED_OUT and not already_finished:
+            # Their data is unusable, so give the counterbalance slot back to
+            # the pool for the next participant. (Only the first time: this
+            # endpoint can be called again if the browser retries.)
+            slot = session.get(Slot, participant.slot)
+            if slot is not None and slot.times_assigned > 0:
+                slot.times_assigned -= 1
 
         session.commit()
 
