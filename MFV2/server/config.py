@@ -206,6 +206,15 @@ class Config:
         return self.get_int("Task Parameters", "max_assignments_per_slot", 1)
 
     @property
+    def debug_task_settings(self):
+        """Task settings that replace the real ones in debug sessions."""
+        return {
+            "forecast_start_index": self.get_int("Experiment", "debug_forecast_start_index", 5),
+            "max_trials": self.get_int("Experiment", "debug_max_trials", 10),
+            "distractor_length_ms": self.get_int("Experiment", "debug_distractor_length_ms", 1000),
+        }
+
+    @property
     def never_turn_away(self):
         return self.get_bool("Task Parameters", "never_turn_away", False)
 

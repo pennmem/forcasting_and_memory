@@ -569,7 +569,7 @@ function buildForecastTrial(roundIndex, previousValue) {
     }],
     on_load: function() {
       restrictSurveyTextInputToDigits();
-      requireDigitCount(FORECAST_DIGITS);
+      requireForecastInRange(FORECAST_DIGITS, MIN_AR_VALUE, MAX_AR_VALUE);
       hideSurveyTextButton();
     },
     data: {

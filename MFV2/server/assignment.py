@@ -11,7 +11,7 @@ import uuid
 
 from sqlalchemy import func, select
 
-from .models import Participant, Slot, Status, utcnow
+from .models import DEBUG_SLOT, Participant, Slot, Status, utcnow
 
 
 class NoSlotsAvailable(RuntimeError):
@@ -46,6 +46,7 @@ def release_abandoned_slots(session, cutoff_minutes):
         session.execute(
             select(Participant).where(
                 Participant.status.in_((Status.ALLOCATED, Status.STARTED)),
+                Participant.slot != DEBUG_SLOT,
                 Participant.last_seen < deadline,
             )
         )
@@ -81,7 +82,10 @@ def reclaim_longest_idle_slot(session, idle_minutes, always=False):
     from someone still working if more people are in the study than there are
     slots. Returns True if a slot was freed.
     """
-    stmt = select(Participant).where(Participant.status.in_((Status.ALLOCATED, Status.STARTED)))
+    stmt = select(Participant).where(
+        Participant.status.in_((Status.ALLOCATED, Status.STARTED)),
+        Participant.slot != DEBUG_SLOT,
+    )
 
     if idle_minutes and idle_minutes > 0:
         deadline = utcnow() - dt.timedelta(minutes=idle_minutes)
@@ -122,7 +126,7 @@ def revive_if_abandoned(session, participant):
     so it can briefly hold two participants; that is better than discarding a
     session that is genuinely still running.
     """
-    if participant.status != Status.ABANDONED:
+    if participant.status != Status.ABANDONED or participant.slot == DEBUG_SLOT:
         return False
 
     participant.status = Status.STARTED
@@ -184,6 +188,7 @@ def assign_participant(
     max_per_slot=0,
     reclaim_idle_minutes=0,
     never_turn_away=False,
+    debug=False,
 ):
     """Return the `Participant` row for this visit, creating one if needed.
 
@@ -220,6 +225,11 @@ def assign_participant(
         slot = session.get(Slot, forced_slot)
         if slot is None:
             raise NoSlotsAvailable(f"Slot {forced_slot} does not exist")
+    elif debug:
+        # Debug sessions all share the reserved slot 0 and never touch the pool.
+        slot = session.get(Slot, DEBUG_SLOT)
+        if slot is None:
+            raise NoSlotsAvailable("The debug slot does not exist")
     else:
         slot = _pick_least_used_slot(session, max_per_slot)
         if (
@@ -235,7 +245,8 @@ def assign_participant(
                 else "No active counterbalance slots configured"
             )
 
-    slot.times_assigned += 1
+    if slot.slot != DEBUG_SLOT:
+        slot.times_assigned += 1
 
     participant = Participant(
         uniqueid=new_uniqueid(),

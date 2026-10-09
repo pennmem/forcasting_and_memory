@@ -214,6 +214,7 @@ def experiment():
                 max_per_slot=config.max_per_slot,
                 reclaim_idle_minutes=config.reclaim_idle_minutes,
                 never_turn_away=config.never_turn_away,
+                debug=debug_mode,
             )
         except AlreadyParticipated as exc:
             session.rollback()
@@ -265,6 +266,8 @@ def experiment():
                 "assignmentsUrl": url_for("static", filename=config.assignments_filename),
             }
         )
+        if debug_mode:
+            task_config.update(config.debug_task_settings)
 
     return render_template("exp.html", task_config=task_config)
 

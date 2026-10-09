@@ -45,6 +45,12 @@ class Status:
     TERMINAL = (COMPLETED, SCREENED_OUT)
 
 
+#: Slot 0 is reserved for debug sessions. It is not part of the counterbalance
+#: pool (it is inactive, never picked, and never counted), so debug runs can use
+#: it as often as you like without using up real slots 1..N.
+DEBUG_SLOT = 0
+
+
 class Slot(Base):
     """One counterbalance slot, i.e. one entry in static/data/assignments.json.
 
@@ -207,21 +213,33 @@ def make_session_factory(engine):
 
 
 def init_db(engine, num_slots):
-    """Create tables and make sure slots 0..num_slots-1 exist."""
+    """Create tables and make sure slot 0 (debug) and real slots 1..num_slots exist."""
     Base.metadata.create_all(engine)
 
     session_factory = make_session_factory(engine)
     with session_factory() as session:
         existing = {row[0] for row in session.query(Slot.slot).all()}
-        missing = [s for s in range(num_slots) if s not in existing]
+        missing = [s for s in range(DEBUG_SLOT, num_slots + 1) if s not in existing]
 
         if missing:
-            session.add_all([Slot(slot=s, times_assigned=0, times_completed=0) for s in missing])
+            session.add_all(
+                [
+                    Slot(slot=s, times_assigned=0, times_completed=0, active=(s != DEBUG_SLOT))
+                    for s in missing
+                ]
+            )
             session.commit()
+
+        # The debug slot is never part of the pool, including in databases
+        # created before it was reserved.
+        session.query(Slot).filter(Slot.slot == DEBUG_SLOT).update(
+            {"active": False}, synchronize_session=False
+        )
+        session.commit()
 
         # Slots beyond the configured pool are deactivated rather than deleted
         # so participants already assigned to them keep a valid foreign key.
-        stale = [s for s in existing if s >= num_slots]
+        stale = [s for s in existing if s > num_slots]
         if stale:
             session.query(Slot).filter(Slot.slot.in_(stale)).update(
                 {"active": False}, synchronize_session=False

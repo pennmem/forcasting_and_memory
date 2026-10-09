@@ -125,7 +125,7 @@ function restrictSurveyTextInputToDigits() {
 }
 
 // On Enter, if `isInvalid(value)` is true, stay on the page and show `message`
-// in red under the box. The browser's own validation bubble is turned off.
+// (a string, or a function of the typed value) in red under the box. The browser's own validation bubble is turned off.
 function showErrorOnEnter(isInvalid, message) {
   const inputs = document.querySelectorAll(
     ".jspsych-survey-text-question input, #jspsych-content input[type='text']"
@@ -157,7 +157,7 @@ function showErrorOnEnter(isInvalid, message) {
       }
       e.preventDefault();
       e.stopImmediatePropagation();
-      note.textContent = message;
+      note.textContent = typeof message === "function" ? message(input.value.trim()) : message;
     }, true);
   });
 }
@@ -175,6 +175,21 @@ function requireDigitCount(digits) {
   showErrorOnEnter(
     function(raw) { return !pattern.test(raw); },
     "Enter a " + digits + "-digit number."
+  );
+}
+
+// A forecast must be exactly `digits` digits and inside [min, max].
+function requireForecastInRange(digits, min, max) {
+  const pattern = new RegExp("^\\d{" + digits + "}$");
+  showErrorOnEnter(
+    function(raw) {
+      return !pattern.test(raw) || Number(raw) < min || Number(raw) > max;
+    },
+    function(raw) {
+      return pattern.test(raw)
+        ? "Enter a number between " + min + " and " + max + "."
+        : "Enter a " + digits + "-digit number.";
+    }
   );
 }
 

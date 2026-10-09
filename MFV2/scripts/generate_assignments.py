@@ -1,4 +1,5 @@
 import argparse
+import copy
 import json
 import math
 import hashlib
@@ -592,7 +593,7 @@ def main():
             print(f"  {slot + 1}/{len(design)} assignments generated")
 
         assignments.append({
-            "slot": slot,
+            "slot": slot + 1,  # real slots are numbered 1..N; slot 0 is the debug slot
             "rho": rho,
             "start_type": start_type,
             "ar1": {
@@ -624,8 +625,20 @@ def main():
             }
         })
 
+    # Slot 0 is the reserved debug slot (never counted by the server), so the
+    # file is indexed by slot number: assignments[0] is debug and
+    # assignments[1..N] are the real slots. The debug entry reuses slot 1's
+    # stimuli.
+    debug_entry = copy.deepcopy(assignments[0])
+    debug_entry["slot"] = 0
+    debug_entry["debug"] = True
+
     output = {
         "metadata": {
+            "slot_numbering": (
+                "assignments[0] is the debug slot (slot 0, reuses slot 1's stimuli); "
+                "real slots are 1..num_participants"
+            ),
             "num_participants": NUM_PARTICIPANTS,
             "rho_values": RHO_VALUES,
             "participants_per_rho": NUM_PARTICIPANTS // len(RHO_VALUES),
@@ -666,7 +679,7 @@ def main():
             "python_version_used_to_generate": sys.version,
             "do_not_regenerate_after_data_collection_begins": True
         },
-        "assignments": assignments
+        "assignments": [debug_entry] + assignments
     }
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
