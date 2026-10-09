@@ -485,6 +485,7 @@ function buildValueRecallTrial(roundIndex, value) {
     ],
     on_load: function() {
   restrictSurveyTextInputToDigits();
+  requireExactShownValue(value);
   hideSurveyTextButton();
 
   if (roundIndex === FORECAST_START_INDEX - 1) {
@@ -567,7 +568,8 @@ function buildForecastTrial(roundIndex, previousValue) {
       required: true
     }],
     on_load: function() {
-      restrictSurveyTextInputToDigits(FORECAST_DIGITS);
+      restrictSurveyTextInputToDigits();
+      requireDigitCount(FORECAST_DIGITS);
       hideSurveyTextButton();
     },
     data: {
@@ -614,6 +616,7 @@ function buildForecastFeedbackTrial(roundIndex, actualValue) {
     ],
     on_load: function() {
       restrictSurveyTextInputToDigits();
+      requireExactShownValue(actualValue);
       hideSurveyTextButton();
     },
     data: {

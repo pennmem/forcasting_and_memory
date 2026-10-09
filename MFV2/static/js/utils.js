@@ -83,10 +83,9 @@ function hideSurveyTextButton() {
     "position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none;";
 }
 
-// Digits only. With `exactDigits`, any number of digits can be typed, but the
-// form cannot be submitted unless there are exactly that many: the browser's
-// form validation blocks it and shows "Enter a N-digit number".
-function restrictSurveyTextInputToDigits(exactDigits) {
+// Digits only. Length and exact-value checks are separate so the message can
+// be the same red line under the box, shown only when Enter is pressed.
+function restrictSurveyTextInputToDigits() {
   const inputs = document.querySelectorAll(
     ".jspsych-survey-text-question input, #jspsych-content input[type='text']"
   );
@@ -101,7 +100,7 @@ function restrictSurveyTextInputToDigits(exactDigits) {
         "ArrowLeft",
         "ArrowRight",
         "Tab",
-		"Enter",
+        "Enter",
         "Home",
         "End"
       ];
@@ -122,18 +121,61 @@ function restrictSurveyTextInputToDigits(exactDigits) {
     input.addEventListener("input", function() {
       input.value = input.value.replace(/[^0-9]/g, "");
     });
-
-    if (exactDigits) {
-      // Registered after the digit filter above, so it sees the cleaned value.
-      const exactPattern = new RegExp(`^[0-9]{${exactDigits}}$`);
-      const message = `Enter a ${exactDigits}-digit number`;
-      const checkLength = function() {
-        input.setCustomValidity(exactPattern.test(input.value) ? "" : message);
-      };
-      input.addEventListener("input", checkLength);
-      checkLength();
-    }
   });
+}
+
+// On Enter, if `isInvalid(value)` is true, stay on the page and show `message`
+// in red under the box. The browser's own validation bubble is turned off.
+function showErrorOnEnter(isInvalid, message) {
+  const inputs = document.querySelectorAll(
+    ".jspsych-survey-text-question input, #jspsych-content input[type='text']"
+  );
+
+  inputs.forEach(function(input) {
+    let note = input.parentElement.querySelector(".ar-entry-error");
+    if (!note) {
+      note = document.createElement("p");
+      note.className = "ar-entry-error";
+      note.style.cssText = "color:#b00; margin-top:12px; min-height:1.2em; font-size:18px;";
+      input.insertAdjacentElement("afterend", note);
+    }
+
+    input.addEventListener("input", function() {
+      input.setCustomValidity("");
+      note.textContent = "";
+    });
+
+    const form = input.form;
+    if (!form || form.dataset.entryCheckBound === "1") {
+      return;
+    }
+    form.dataset.entryCheckBound = "1";
+    form.setAttribute("novalidate", "novalidate");
+    form.addEventListener("submit", function(e) {
+      if (!isInvalid(input.value.trim())) {
+        return;
+      }
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      note.textContent = message;
+    }, true);
+  });
+}
+
+function requireExactShownValue(expected) {
+  const target = String(expected);
+  showErrorOnEnter(
+    function(raw) { return raw !== target; },
+    "That number is not valid. Please enter the number shown."
+  );
+}
+
+function requireDigitCount(digits) {
+  const pattern = new RegExp("^\\d{" + digits + "}$");
+  showErrorOnEnter(
+    function(raw) { return !pattern.test(raw); },
+    "Enter a " + digits + "-digit number."
+  );
 }
 
 
