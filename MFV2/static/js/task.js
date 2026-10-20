@@ -483,6 +483,7 @@ function buildValueRecallTrial(roundIndex, value) {
       }
     ],
     on_load: function() {
+  updateDebugProgress("Observation " + (roundIndex + 1) + " / " + FORECAST_START_INDEX);
   restrictSurveyTextInputToDigits();
   requireExactShownValue(value);
   hideSurveyTextButton();
@@ -567,6 +568,7 @@ function buildForecastTrial(roundIndex, previousValue) {
       required: true
     }],
     on_load: function() {
+      updateDebugProgress("Forecast " + (roundIndex - FORECAST_START_INDEX + 1) + " / " + (MAX_TRIALS - FORECAST_START_INDEX));
       restrictSurveyTextInputToDigits();
       requireForecastInRange(FORECAST_DIGITS, MIN_AR_VALUE, MAX_AR_VALUE);
       hideSurveyTextButton();
@@ -614,6 +616,7 @@ function buildForecastFeedbackTrial(roundIndex, actualValue) {
       }
     ],
     on_load: function() {
+      updateDebugProgress("Forecast " + (roundIndex - FORECAST_START_INDEX + 1) + " / " + (MAX_TRIALS - FORECAST_START_INDEX) + " (feedback)");
       restrictSurveyTextInputToDigits();
       requireExactShownValue(actualValue);
       hideSurveyTextButton();

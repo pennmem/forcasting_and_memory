@@ -661,3 +661,13 @@ document.addEventListener("fullscreenchange", function() {
     showFullscreenWarning();
   }
 });
+
+
+// Debug sessions only: append where we are in the experiment (for example
+// "Forecast 37 / 250") to the debug banner in the bottom-left corner.
+function updateDebugProgress(text) {
+  const el = document.getElementById("debug-progress");
+  if (el) {
+    el.textContent = " \u2014 " + text;
+  }
+}
