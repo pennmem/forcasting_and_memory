@@ -136,12 +136,12 @@ class Config:
     @property
     def payment(self):
         return {
-            "flat_fee_dollars": self.get_float("Payment", "flat_fee_dollars", 3.00),
-            "expected_bonus_dollars": self.get_float("Payment", "expected_bonus_dollars", 4.00),
+            "flat_fee_dollars": self.get_float("Payment", "flat_fee_dollars", 5.00),
+            "expected_bonus_dollars": self.get_float("Payment", "expected_bonus_dollars", 3.75),
             "expected_score_for_payment": self.get_float(
-                "Payment", "expected_score_for_payment", 200
+                "Payment", "expected_score_for_payment", 7013
             ),
-            "max_bonus_dollars": self.get_float("Payment", "max_bonus_dollars", 8.00),
+            "max_bonus_dollars": self.get_float("Payment", "max_bonus_dollars", 7.50),
         }
 
     @property
@@ -154,7 +154,7 @@ class Config:
         payment = self.payment
         return {
             "forecast_start_index": self.get_int("Experiment", "forecast_start_index", 20),
-            "max_trials": self.get_int("Experiment", "max_trials", 80),
+            "max_trials": self.get_int("Experiment", "max_trials", 270),
             "distractors_enabled": self.get_bool("Experiment", "distractors_enabled", False),
             "distractor_length_ms": self.get_int("Experiment", "distractor_length_ms", 4000),
             "score_sd": self.get_float("Experiment", "score_sd", 20),

@@ -48,7 +48,7 @@ function valueToPercent(value) {
 }
 
 // Maximum points for one forecast. Keep in step with server/scoring.py.
-const MAX_POINTS_PER_ROUND = 10;
+const MAX_POINTS_PER_ROUND = 100;
 
 function scoreForecast(forecast, actual) {
   const error = Math.abs(forecast - actual);

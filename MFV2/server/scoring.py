@@ -11,11 +11,11 @@ import json
 import math
 
 # Maximum points for one forecast. Keep in step with static/js/utils.js.
-MAX_POINTS_PER_ROUND = 10
+MAX_POINTS_PER_ROUND = 100
 
 
 def score_forecast(forecast, actual, score_sd):
-    """Afrouzi scoring rule: full credit (10 points) at zero error, zero at `score_sd` off."""
+    """Afrouzi scoring rule: full credit (100 points) at zero error, zero at `score_sd` off."""
     if forecast is None or actual is None:
         return 0
 

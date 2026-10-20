@@ -11,12 +11,12 @@ from pathlib import Path
 # Main design settings
 # -----------------------------
 
-NUM_PARTICIPANTS = 30
+NUM_PARTICIPANTS = 60
 
-RHO_VALUES = [0.6]
+RHO_VALUES = [0.6, 0.8]
 START_TYPES = ["animacy", "size"]
 
-N_AR_VALUES = 80
+N_AR_VALUES = 270
 AR_MEAN = 500
 AR_SD = 20
 AR_MIN = 400
@@ -28,7 +28,7 @@ TRAIN_LENGTHS = [3, 4, 5, 6]
 
 # Bumped when the generation procedure changed. v3 conditioned on realized rho;
 # this version matches rho, mean and SD exactly in each phase (see below).
-SEED = "20261007-moment-matched-rho06"
+SEED = "20261020-n60-rho06-08-obs20-fc250"
 
 # AR_SD is the SD of the series itself (its long-run stationary SD), so the
 # white-noise innovations have SD AR_SD * sqrt(1 - rho^2).
@@ -37,9 +37,9 @@ SEED = "20261007-moment-matched-rho06"
 # Set this to False to read AR_SD as the innovation SD instead.
 INTERPRET_AR_SD_AS_STATIONARY_SD = True
 
-# The first value is drawn from the process's stationary distribution but kept
-# within START_WINDOW_SD_FRACTION * AR_SD of the mean (i.e. +/-10 for SD 20).
-START_WINDOW_SD_FRACTION = 0.5
+# The first value is a draw from the process's stationary distribution,
+# N(AR_MEAN, AR_SD^2) when AR_SD is the stationary SD, rounded to an integer.
+# It is not restricted, and the adjustment steps below never change it.
 
 
 # -----------------------------
@@ -248,13 +248,16 @@ def innovation_sd_for_rho(rho):
         return AR_SD
 
 
-def draw_start_value():
-    """A stationary draw, kept within START_WINDOW_SD_FRACTION * AR_SD of the mean."""
-    limit = START_WINDOW_SD_FRACTION * AR_SD
-    while True:
-        value = round_positive_to_nearest_integer(rng.normal(AR_MEAN, AR_SD))
-        if abs(value - AR_MEAN) <= limit:
-            return value
+def stationary_sd_for_rho(rho):
+    """SD of the process's stationary distribution."""
+    if INTERPRET_AR_SD_AS_STATIONARY_SD:
+        return AR_SD
+    return AR_SD / math.sqrt(1 - rho ** 2)
+
+
+def draw_start_value(rho):
+    """The first value: a draw from the stationary distribution, rounded."""
+    return round_positive_to_nearest_integer(rng.normal(AR_MEAN, stationary_sd_for_rho(rho)))
 
 
 def loose_draw(rho):
@@ -262,7 +265,7 @@ def loose_draw(rho):
     innovation_sd = innovation_sd_for_rho(rho)
 
     for attempt in range(1, MAX_AR_ATTEMPTS + 1):
-        values = [draw_start_value()]
+        values = [draw_start_value(rho)]
         for _ in range(1, N_AR_VALUES):
             epsilon = rng.normal(0, innovation_sd)
             values.append(AR_MEAN + rho * (values[-1] - AR_MEAN) + epsilon)
@@ -299,8 +302,7 @@ def rescale_phases(values):
         for i in range(start, end):
             scaled[i] = AR_MEAN + (values[i] - mean) * AR_SD / sd
     rounded = [round_positive_to_nearest_integer(v) for v in scaled]
-    start_limit = START_WINDOW_SD_FRACTION * AR_SD
-    rounded[0] = min(max(rounded[0], AR_MEAN - start_limit), AR_MEAN + start_limit)
+    rounded[0] = values[0]  # the first value is the stationary draw; keep it as drawn
     return rounded
 
 
@@ -312,7 +314,7 @@ def fix_phase_sums(values):
         while sum(values[start:end]) != target:
             i = start + rng.randbelow(end - start)
             if i == 0:
-                continue  # the start value is pinned by the start window
+                continue  # the first value is the stationary draw; never adjusted
             values[i] += 1 if sum(values[start:end]) < target else -1
 
 
@@ -347,7 +349,6 @@ def polish(values, rho):
     values = list(values)
     fix_phase_sums(values)
     loss = match_loss(values, rho)
-    start_limit = START_WINDOW_SD_FRACTION * AR_SD
 
     for _ in range(POLISH_STEPS):
         if is_matched(values, rho):
@@ -356,15 +357,11 @@ def polish(values, rho):
         lo, hi = phase_bounds()[phase]
         i = lo + rng.randbelow(hi - lo)
         j = lo + rng.randbelow(hi - lo)
-        if i == j:
+        if i == j or i == 0 or j == 0:  # the first value is never adjusted
             continue
         d = 1 + rng.randbelow(3)
         vi, vj = values[i] + d, values[j] - d
         if not (AR_MIN <= vi <= AR_MAX and AR_MIN <= vj <= AR_MAX):
-            continue
-        if (i == 0 and abs(vi - AR_MEAN) > start_limit) or (
-            j == 0 and abs(vj - AR_MEAN) > start_limit
-        ):
             continue
         old_i, old_j = values[i], values[j]
         values[i], values[j] = vi, vj
@@ -668,10 +665,7 @@ def main():
                 "sd": "exactly %s (population SD, divide by n) in each phase" % AR_SD,
                 "rho": "OLS slope of x_t on x_{t-1} with intercept, within %s of nominal in each phase" % RHO_MATCH_TOLERANCE,
                 "rho_match_tolerance": RHO_MATCH_TOLERANCE,
-                "start_value_window": [
-                    AR_MEAN - START_WINDOW_SD_FRACTION * AR_SD,
-                    AR_MEAN + START_WINDOW_SD_FRACTION * AR_SD,
-                ],
+                "start_value": "first value is a draw from the stationary distribution, rounded; never adjusted",
                 "mean_draws_per_assignment": round(total_attempts / len(assignments), 1),
             },
 
@@ -731,8 +725,8 @@ def report_realized_rho(assignments):
                 print(f"  {rho:>5} {phase:>12} {stat:>5} {min(vals):>10.4f} {max(vals):>10.4f} {err:>10.6f}")
 
     firsts = [a["ar1"]["first_value"] for a in assignments]
-    print(f"\n  Start values: min {min(firsts)}, max {max(firsts)} "
-          f"(allowed {AR_MEAN - START_WINDOW_SD_FRACTION * AR_SD:g}..{AR_MEAN + START_WINDOW_SD_FRACTION * AR_SD:g})")
+    print(f"\n  Start values (stationary draws): min {min(firsts)}, max {max(firsts)}, "
+          f"SD {summarize(firsts)[1]:.1f}")
 
 
 if __name__ == "__main__":
