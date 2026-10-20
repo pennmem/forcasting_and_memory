@@ -136,12 +136,11 @@ class Config:
     @property
     def payment(self):
         return {
-            "flat_fee_dollars": self.get_float("Payment", "flat_fee_dollars", 5.00),
-            "expected_bonus_dollars": self.get_float("Payment", "expected_bonus_dollars", 3.75),
+            "flat_fee_dollars": self.get_float("Payment", "flat_fee_dollars", 4.00),
+            "expected_bonus_dollars": self.get_float("Payment", "expected_bonus_dollars", 5.00),
             "expected_score_for_payment": self.get_float(
-                "Payment", "expected_score_for_payment", 7013
+                "Payment", "expected_score_for_payment", 7000
             ),
-            "max_bonus_dollars": self.get_float("Payment", "max_bonus_dollars", 7.50),
         }
 
     @property
@@ -164,7 +163,6 @@ class Config:
             "flat_fee_dollars": payment["flat_fee_dollars"],
             "expected_bonus_dollars": payment["expected_bonus_dollars"],
             "expected_score_for_payment": payment["expected_score_for_payment"],
-            "max_bonus_dollars": payment["max_bonus_dollars"],
         }
 
     @property

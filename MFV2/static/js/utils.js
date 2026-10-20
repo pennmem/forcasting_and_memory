@@ -60,7 +60,7 @@ function scoreForecast(forecast, actual) {
 // from the recorded trials, so this is only what the participant is shown.
 function computeBonusPayment(score) {
   const raw = EXPECTED_BONUS_DOLLARS * score / EXPECTED_SCORE_FOR_PAYMENT;
-  return Math.min(Math.max(raw, 0), MAX_BONUS_DOLLARS);
+  return Math.max(raw, 0);
 }
 
 function formatDollars(amount) {

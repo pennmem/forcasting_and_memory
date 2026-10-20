@@ -33,7 +33,6 @@ const MAX_AR_VALUE = CONFIG.max_ar_value;
 const FLAT_FEE_DOLLARS = CONFIG.flat_fee_dollars;
 const EXPECTED_BONUS_DOLLARS = CONFIG.expected_bonus_dollars;
 const EXPECTED_SCORE_FOR_PAYMENT = CONFIG.expected_score_for_payment;
-const MAX_BONUS_DOLLARS = CONFIG.max_bonus_dollars;
 
 const FORECAST_START_INDEX = CONFIG.forecast_start_index;
 const MAX_TRIALS = CONFIG.max_trials;

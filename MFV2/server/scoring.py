@@ -33,13 +33,17 @@ def score_forecast(forecast, actual, score_sd):
 
 
 def compute_bonus(score, payment):
-    """Linear bonus schedule, capped at `max_bonus_dollars`."""
+    """Linear bonus schedule: proportional to the score, with no cap.
+
+    The largest possible bonus is set by the largest possible score (250 forecasts
+    at 100 points = 25000), so no separate cap is needed.
+    """
     expected_score = payment["expected_score_for_payment"]
     if not expected_score:
         return 0.0
 
     raw = payment["expected_bonus_dollars"] * (score or 0) / expected_score
-    bonus = min(max(raw, 0.0), payment["max_bonus_dollars"])
+    bonus = max(raw, 0.0)
     return round(bonus, 2)
 
 
