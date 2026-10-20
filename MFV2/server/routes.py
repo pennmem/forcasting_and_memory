@@ -266,8 +266,6 @@ def experiment():
                 "assignmentsUrl": url_for("static", filename=config.assignments_filename),
             }
         )
-        if debug_mode:
-            task_config.update(config.debug_task_settings)
 
     return render_template("exp.html", task_config=task_config)
 
