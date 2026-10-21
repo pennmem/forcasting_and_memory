@@ -213,7 +213,7 @@ class Config:
 
     @property
     def cutoff_minutes(self):
-        return self.get_int("Task Parameters", "cutoff_time", 90)
+        return self.get_int("Task Parameters", "cutoff_time", 30)
 
     @property
     def browser_exclude_rule(self):
