@@ -5,6 +5,7 @@ task, hand out counterbalance conditions, and store trial data -- with
 recruitment and payment handled by Prolific instead of Mechanical Turk.
 """
 
+import json
 import logging
 import sys
 from pathlib import Path
@@ -13,6 +14,22 @@ from flask import Flask
 
 from .config import PROJECT_ROOT, get_config
 from .models import init_db, make_engine, make_session_factory
+
+
+def load_slot_conditions(assignments_filename):
+    """Map each real slot to its condition (rho), read from the stimuli file.
+
+    Used to balance the conditions when slots are handed out. Returns None if the
+    file cannot be read, in which case allocation falls back to the plain rule.
+    """
+    path = PROJECT_ROOT / "static" / assignments_filename
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        return {a["slot"]: a["rho"] for a in data["assignments"] if not a.get("debug")}
+    except (OSError, ValueError, KeyError):
+        return None
+
 
 __all__ = ["create_app", "PROJECT_ROOT"]
 
@@ -53,6 +70,7 @@ def create_app(config=None):
     engine = make_engine(config.database_url)
     created = init_db(engine, config.num_counters)
 
+    app.config["SLOT_CONDITIONS"] = load_slot_conditions(config.assignments_filename)
     app.config["EXPERIMENT_CONFIG"] = config
     app.config["ENGINE"] = engine
     app.config["SESSION_FACTORY"] = make_session_factory(engine)

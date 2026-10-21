@@ -8,10 +8,17 @@ participants who walked away.
 
 import datetime as dt
 import uuid
+from collections import Counter
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 
 from .models import DEBUG_SLOT, Participant, Slot, Status, utcnow
+
+#: A participant who has been silent for longer than this is not counted toward a
+#: condition's total when balancing, because they have most likely left. The task
+#: sends data every few seconds while running, and the setup screens record trials
+#: too, so an active participant is never silent this long.
+BALANCE_LIVE_MINUTES = 3
 
 
 class NoSlotsAvailable(RuntimeError):
@@ -137,8 +144,64 @@ def revive_if_abandoned(session, participant):
     return True
 
 
-def _pick_least_used_slot(session, max_per_slot=0):
+def _pick_balanced_slot(session, max_per_slot, slot_conditions):
+    """Pick a free slot from the condition that currently has the fewest participants.
+
+    A condition's count is the number of its participants who have finished or who
+    are still active (seen within BALANCE_LIVE_MINUTES). Someone who has gone quiet
+    stops counting right away, even though their slot is only released later, so
+    the next arrival goes back to that condition. With spare slots, this keeps the
+    conditions balanced however many people walk away. Within the chosen condition
+    the lowest-numbered free slot is used. If that condition has no free slot left,
+    any free slot is used.
+    """
+    stmt = (
+        select(Slot)
+        .where(Slot.active.is_(True), Slot.times_assigned < max_per_slot)
+        .order_by(Slot.slot.asc())
+    )
+    if session.bind.dialect.name == "postgresql":
+        stmt = stmt.with_for_update()
+
+    free = session.execute(stmt).scalars().all()
+    if not free:
+        return None
+
+    live_cutoff = utcnow() - dt.timedelta(minutes=BALANCE_LIVE_MINUTES)
+    counted_slots = {
+        slot_number
+        for (slot_number,) in session.execute(
+            select(Participant.slot).where(
+                Participant.slot != DEBUG_SLOT,
+                or_(
+                    Participant.status == Status.COMPLETED,
+                    and_(
+                        Participant.status.in_((Status.ALLOCATED, Status.STARTED)),
+                        Participant.last_seen >= live_cutoff,
+                    ),
+                ),
+            )
+        ).all()
+    }
+    held = Counter(slot_conditions.get(slot_number) for slot_number in counted_slots)
+    open_conditions = {
+        slot_conditions[s.slot] for s in free if slot_conditions.get(s.slot) is not None
+    }
+    if not open_conditions:
+        return free[0]
+
+    target = min(open_conditions, key=lambda c: (held[c], c))
+    for s in free:
+        if slot_conditions.get(s.slot) == target:
+            return s
+    return free[0]
+
+
+def _pick_least_used_slot(session, max_per_slot=0, slot_conditions=None):
     """Return the active slot with the fewest assignments.
+
+    With `slot_conditions` (slot number -> condition) and a per-slot cap, the
+    allocation is balanced across conditions instead; see `_pick_balanced_slot`.
 
     Ties are broken by slot number rather than randomly: with a fixed
     assignments.json this gives a deterministic, reproducible fill order and
@@ -149,6 +212,9 @@ def _pick_least_used_slot(session, max_per_slot=0):
     has been handed out the picker simply wraps around to slot 0, so a slot
     whose participant walked away stays "taken" while other slots are used twice.
     """
+    if slot_conditions and max_per_slot and max_per_slot > 0:
+        return _pick_balanced_slot(session, max_per_slot, slot_conditions)
+
     stmt = select(Slot).where(Slot.active.is_(True))
     if max_per_slot and max_per_slot > 0:
         stmt = stmt.where(Slot.times_assigned < max_per_slot)
@@ -189,6 +255,7 @@ def assign_participant(
     reclaim_idle_minutes=0,
     never_turn_away=False,
     debug=False,
+    slot_conditions=None,
 ):
     """Return the `Participant` row for this visit, creating one if needed.
 
@@ -231,13 +298,13 @@ def assign_participant(
         if slot is None:
             raise NoSlotsAvailable("The debug slot does not exist")
     else:
-        slot = _pick_least_used_slot(session, max_per_slot)
+        slot = _pick_least_used_slot(session, max_per_slot, slot_conditions)
         if (
             slot is None
             and max_per_slot
             and reclaim_longest_idle_slot(session, reclaim_idle_minutes, never_turn_away)
         ):
-            slot = _pick_least_used_slot(session, max_per_slot)
+            slot = _pick_least_used_slot(session, max_per_slot, slot_conditions)
         if slot is None:
             raise NoSlotsAvailable(
                 "Every counterbalance slot is taken"

@@ -215,6 +215,7 @@ def experiment():
                 reclaim_idle_minutes=config.reclaim_idle_minutes,
                 never_turn_away=config.never_turn_away,
                 debug=debug_mode,
+                slot_conditions=current_app.config.get("SLOT_CONDITIONS"),
             )
         except AlreadyParticipated as exc:
             session.rollback()

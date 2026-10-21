@@ -11,7 +11,7 @@ from pathlib import Path
 # Main design settings
 # -----------------------------
 
-NUM_PARTICIPANTS = 60
+NUM_PARTICIPANTS = 72
 
 RHO_VALUES = [0.6, 0.8]
 START_TYPES = ["animacy", "size"]
@@ -28,7 +28,7 @@ TRAIN_LENGTHS = [3, 4, 5, 6]
 
 # Bumped when the generation procedure changed. v3 conditioned on realized rho;
 # this version matches rho, mean and SD exactly in each phase (see below).
-SEED = "20261022-n60-rho06-08-obs20-fc200"
+SEED = "20261023-n72-rho06-08-obs20-fc200-spares"
 
 # AR_SD is the SD of the series itself (its long-run stationary SD), so the
 # white-noise innovations have SD AR_SD * sqrt(1 - rho^2).
