@@ -98,10 +98,10 @@ def create_app(config=None):
             config.task_settings["debug_slot"],
         )
 
-    if config.task_settings["max_trials"] < 270 or config.task_settings["forecast_start_index"] < 20:
+    if config.task_settings["max_trials"] < 170 or config.task_settings["forecast_start_index"] < 20:
         logger.warning(
             "Running a shortened timeline (forecast_start_index=%s, max_trials=%s). "
-            "The full study uses 20 and 270.",
+            "The full study uses 20 and 170.",
             config.task_settings["forecast_start_index"],
             config.task_settings["max_trials"],
         )
