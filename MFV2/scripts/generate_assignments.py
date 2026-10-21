@@ -16,7 +16,7 @@ NUM_PARTICIPANTS = 60
 RHO_VALUES = [0.6, 0.8]
 START_TYPES = ["animacy", "size"]
 
-N_AR_VALUES = 170
+N_AR_VALUES = 220
 AR_MEAN = 500
 AR_SD = 20
 AR_MIN = 400
@@ -28,7 +28,7 @@ TRAIN_LENGTHS = [3, 4, 5, 6]
 
 # Bumped when the generation procedure changed. v3 conditioned on realized rho;
 # this version matches rho, mean and SD exactly in each phase (see below).
-SEED = "20261021-n60-rho06-08-obs20-fc150"
+SEED = "20261022-n60-rho06-08-obs20-fc200"
 
 # AR_SD is the SD of the series itself (its long-run stationary SD), so the
 # white-noise innovations have SD AR_SD * sqrt(1 - rho^2).
