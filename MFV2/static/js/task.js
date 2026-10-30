@@ -538,23 +538,31 @@ function buildValueRecallLoop(roundIndex, value) {
   };
 }
 
+// A note under the entry box. It sits in a zero-height wrapper, so it takes no
+// space in the layout: showing it does not move anything else on the page.
 function buildTransitionScreen(html) {
-  const button = document.querySelector("#jspsych-survey-text-next");
+  const input = document.querySelector("input.digit-input");
 
-  if (!button) {
+  if (!input) {
     return;
   }
 
-  button.insertAdjacentHTML("afterend", `
-    <div style="
-      margin-top: 24px;
-      max-width: 700px;
-      text-align: center;
-      font-size: 18px;
-      line-height: 1.4;
-      font-family: Arial, sans-serif;
-    ">
-      ${html}
+  getEntryErrorNote(input).insertAdjacentHTML("afterend", `
+    <div style="position: relative; width: 100%; height: 0;">
+      <div style="
+        position: absolute;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 700px;
+        max-width: 92vw;
+        text-align: center;
+        font-size: 18px;
+        line-height: 1.4;
+        font-family: Arial, sans-serif;
+      ">
+        ${html}
+      </div>
     </div>
   `);
 }
@@ -571,6 +579,7 @@ function buildForecastTrial(roundIndex, previousValue) {
       updateDebugProgress("Forecast " + (roundIndex - FORECAST_START_INDEX + 1) + " / " + (MAX_TRIALS - FORECAST_START_INDEX));
       restrictSurveyTextInputToDigits();
       requireForecastInRange(FORECAST_DIGITS, MIN_AR_VALUE, MAX_AR_VALUE);
+      bindForecastBar(FORECAST_DIGITS, MIN_AR_VALUE, MAX_AR_VALUE);
       hideSurveyTextButton();
     },
     data: {
