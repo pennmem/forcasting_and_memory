@@ -143,6 +143,21 @@ class Config:
             ),
         }
 
+    def payment_for(self, rho=None):
+        """Payment settings for a participant in condition `rho`.
+
+        Same as `payment`, except that `expected_score_for_payment` is taken from
+        the [Payment by rho] section when that condition is listed there. This keeps
+        the expected bonus equal across conditions whose rational forecasters earn
+        different scores under the same scoring window.
+        """
+        payment = dict(self.payment)
+        if rho is not None:
+            override = self.get_float("Payment by rho", f"{float(rho):g}", None)
+            if override:
+                payment["expected_score_for_payment"] = override
+        return payment
+
     @property
     def task_settings(self):
         """Everything the browser needs, injected into the experiment page.
@@ -156,9 +171,9 @@ class Config:
             "max_trials": self.get_int("Experiment", "max_trials", 270),
             "distractors_enabled": self.get_bool("Experiment", "distractors_enabled", False),
             "distractor_length_ms": self.get_int("Experiment", "distractor_length_ms", 4000),
-            "score_sd": self.get_float("Experiment", "score_sd", 20),
-            "min_ar_value": self.get_int("Experiment", "min_ar_value", 400),
-            "max_ar_value": self.get_int("Experiment", "max_ar_value", 600),
+            "score_sd": self.get_float("Experiment", "score_sd", 8),
+            "min_ar_value": self.get_int("Experiment", "min_ar_value", 10),
+            "max_ar_value": self.get_int("Experiment", "max_ar_value", 90),
             "debug_slot": self.get_int("Experiment", "debug_slot", None),
             "flat_fee_dollars": payment["flat_fee_dollars"],
             "expected_bonus_dollars": payment["expected_bonus_dollars"],

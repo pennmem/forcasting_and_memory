@@ -17,10 +17,10 @@ RHO_VALUES = [0.6, 0.8]
 START_TYPES = ["animacy", "size"]
 
 N_AR_VALUES = 270
-AR_MEAN = 500
-AR_SD = 20
-AR_MIN = 400
-AR_MAX = 600
+AR_MEAN = 50
+AR_SD = 10
+AR_MIN = 10
+AR_MAX = 90
 
 N_DISTRACTION_TASKS = 80
 WORDS_PER_TASK = 20
@@ -28,17 +28,21 @@ TRAIN_LENGTHS = [3, 4, 5, 6]
 
 # Bumped when the generation procedure changed. v3 conditioned on realized rho;
 # this version matches rho, mean and SD exactly in each phase (see below).
-SEED = "20261024-n72-rho06-08-obs20-fc250-spares"
+SEED = "20261110-n72-rho06-08-obs20-fc250-stationarysd10-10to90"
 
-# AR_SD is the SD of the series itself (its long-run stationary SD), so the
-# white-noise innovations have SD AR_SD * sqrt(1 - rho^2).
+# AR_SD is the series' own long-run (stationary) SD, which is the same (10) at
+# both rho, so participants in the two conditions see the same distribution of
+# values and only the temporal order differs. The white-noise shocks then have
+# SD AR_SD * sqrt(1 - rho^2): 8 at rho 0.6, 6 at rho 0.8.
 # AR(1): x_t = mean + rho * (x_{t-1} - mean) + epsilon_t
 #
-# Set this to False to read AR_SD as the innovation SD instead.
+# Set this to False to read AR_SD as the shock SD instead (as in Afrouzi et al.
+# 2023, where the volatility of epsilon is fixed at 20); the stationary SD is
+# then AR_SD / sqrt(1 - rho^2).
 INTERPRET_AR_SD_AS_STATIONARY_SD = True
 
 # The first value is a draw from the process's stationary distribution,
-# N(AR_MEAN, AR_SD^2) when AR_SD is the stationary SD, rounded to an integer.
+# N(AR_MEAN, stationary_sd^2), rounded to an integer.
 # It is not restricted, and the adjustment steps below never change it.
 
 
@@ -51,7 +55,10 @@ INTERPRET_AR_SD_AS_STATIONARY_SD = True
 # coefficient are made to equal the true values:
 #
 #   mean : exactly AR_MEAN (the integer sums are fixed)
-#   SD   : exactly AR_SD, using the population SD (divide by n). That is the
+#   SD   : the process's stationary SD (target_sd(rho)), using the population
+#          SD (divide by n). Integer values cannot always hit it exactly (at
+#          rho 0.8 the target sum of squares is not an integer), so each phase's
+#          sum of squares is matched to within SS_TOLERANCE. That is the
 #          only convention under which all three windows can match at once:
 #          with equal means, the sums of squares of the two phases add up to
 #          that of the whole series only if SS = n * SD^2 in each.
@@ -74,8 +81,11 @@ RHO_MATCH_TOLERANCE = 0.0005
 
 # Loose rejection-sampling neighbourhood for the starting draw.
 LOOSE_RHO_TOLERANCE = 0.08
-LOOSE_SD_TOLERANCE = 3.0
-LOOSE_MEAN_TOLERANCE = 6.0
+LOOSE_SD_TOLERANCE_REL = 0.15   # fraction of the target SD (3 of 20 in the old spec)
+LOOSE_MEAN_TOLERANCE_REL = 0.30  # fraction of the target SD (6 of 20 in the old spec)
+
+# Per-phase sum of squares must be within this of n * target_sd^2.
+SS_TOLERANCE = 0.5
 
 MAX_AR_ATTEMPTS = 200000
 POLISH_STEPS = 60000
@@ -255,6 +265,11 @@ def stationary_sd_for_rho(rho):
     return AR_SD / math.sqrt(1 - rho ** 2)
 
 
+def target_sd(rho):
+    """Population SD each phase is matched to: the process's stationary SD."""
+    return stationary_sd_for_rho(rho)
+
+
 def draw_start_value(rho):
     """The first value: a draw from the stationary distribution, rounded."""
     return round_positive_to_nearest_integer(rng.normal(AR_MEAN, stationary_sd_for_rho(rho)))
@@ -278,8 +293,8 @@ def loose_draw(rho):
         stats = phase_stats(rounded)
         if all(
             abs(st["rho"] - rho) <= LOOSE_RHO_TOLERANCE
-            and abs(st["sd"] - AR_SD) <= LOOSE_SD_TOLERANCE
-            and abs(st["mean"] - AR_MEAN) <= LOOSE_MEAN_TOLERANCE
+            and abs(st["sd"] - target_sd(rho)) <= LOOSE_SD_TOLERANCE_REL * target_sd(rho)
+            and abs(st["mean"] - AR_MEAN) <= LOOSE_MEAN_TOLERANCE_REL * target_sd(rho)
             for st in stats.values()
         ):
             return rounded, attempt
@@ -289,8 +304,8 @@ def loose_draw(rho):
     )
 
 
-def rescale_phases(values):
-    """Affinely rescale each phase to mean AR_MEAN and SD AR_SD (before rounding).
+def rescale_phases(values, rho):
+    """Affinely rescale each phase to mean AR_MEAN and the target SD (before rounding).
 
     Puts the integer search close to the targets, so it only has to repair
     rounding and rho rather than a large SD miss.
@@ -300,7 +315,7 @@ def rescale_phases(values):
         start, end = phase_bounds()[phase]
         mean, sd = phase_mean_sd(values, phase)
         for i in range(start, end):
-            scaled[i] = AR_MEAN + (values[i] - mean) * AR_SD / sd
+            scaled[i] = AR_MEAN + (values[i] - mean) * target_sd(rho) / sd
     rounded = [round_positive_to_nearest_integer(v) for v in scaled]
     rounded[0] = values[0]  # the first value is the stationary draw; keep it as drawn
     return rounded
@@ -327,7 +342,7 @@ def match_loss(values, rho):
     loss = 0.0
     for phase in ("observation", "forecast"):
         start, end = phase_bounds()[phase]
-        target_ss = AR_SD ** 2 * (end - start)
+        target_ss = target_sd(rho) ** 2 * (end - start)
         loss += ((sum_squares(values, phase) - target_ss) / 2) ** 2
     for phase in phase_bounds():
         loss += ((phase_rho(values, phase) - rho) / RHO_MATCH_TOLERANCE) ** 2
@@ -339,7 +354,7 @@ def is_matched(values, rho):
         start, end = phase_bounds()[phase]
         if sum(values[start:end]) != AR_MEAN * (end - start):
             return False
-        if abs(sum_squares(values, phase) - AR_SD ** 2 * (end - start)) > 1e-6:
+        if abs(sum_squares(values, phase) - target_sd(rho) ** 2 * (end - start)) > SS_TOLERANCE:
             return False
     return all(abs(phase_rho(values, p) - rho) <= RHO_MATCH_TOLERANCE for p in phase_bounds())
 
@@ -383,8 +398,8 @@ def generate_ar1_values(rho):
     for restart in range(1, MAX_POLISH_RESTARTS + 1):
         draw, attempts = loose_draw(rho)
         total_attempts += attempts
-        values = polish(rescale_phases(draw), rho)
-        if values is not None:
+        values = polish(rescale_phases(draw, rho), rho)
+        if values is not None and all(AR_MIN <= v <= AR_MAX for v in values):
             return values, phase_stats(values), total_attempts, restart
 
     raise RuntimeError(
@@ -662,7 +677,8 @@ def main():
                     for phase, (lo, hi) in phase_bounds().items()
                 },
                 "mean": "exactly %s in the observation and forecasting phases (hence combined)" % AR_MEAN,
-                "sd": "exactly %s (population SD, divide by n) in each phase" % AR_SD,
+                "sd": "stationary SD = ar_sd_parameter / sqrt(1 - rho^2) (population SD, divide by n) in each phase, sum of squares within %s" % SS_TOLERANCE,
+                "sd_targets_by_rho": {str(r): round(target_sd(r), 4) for r in RHO_VALUES},
                 "rho": "OLS slope of x_t on x_{t-1} with intercept, within %s of nominal in each phase" % RHO_MATCH_TOLERANCE,
                 "rho_match_tolerance": RHO_MATCH_TOLERANCE,
                 "start_value": "first value is a draw from the stationary distribution, rounded; never adjusted",
@@ -707,7 +723,8 @@ def summarize(values):
 
 def report_realized_rho(assignments):
     """Confirm the matching did what it was supposed to (read this on every regeneration)."""
-    print("\nRealized statistics by phase (targets: mean %s, SD %s, rho nominal):" % (AR_MEAN, AR_SD))
+    print("\nRealized statistics by phase (targets: mean %s, SD = stationary SD per rho %s, rho nominal):"
+          % (AR_MEAN, {r: round(target_sd(r), 2) for r in RHO_VALUES}))
     header = f"  {'rho':>5} {'phase':>12} {'stat':>5} {'min':>10} {'max':>10} {'max |err|':>10}"
     print(header)
     print("  " + "-" * (len(header) - 2))
@@ -717,7 +734,7 @@ def report_realized_rho(assignments):
         by_rho.setdefault(a["rho"], []).append(a["ar1"])
 
     for rho in sorted(by_rho):
-        targets = {"mean": AR_MEAN, "sd": AR_SD, "rho": rho}
+        targets = {"mean": AR_MEAN, "sd": target_sd(rho), "rho": rho}
         for phase in phase_bounds():
             for stat in ("mean", "sd", "rho"):
                 vals = [ar["realized"][phase][stat] for ar in by_rho[rho]]

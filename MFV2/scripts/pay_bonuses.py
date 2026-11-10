@@ -30,6 +30,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from server import load_slot_conditions  # noqa: E402
 from server.config import get_config  # noqa: E402
 from server.models import Participant, Status, make_engine, make_session_factory  # noqa: E402
 from server.scoring import compute_bonus, score_from_trials  # noqa: E402
@@ -39,7 +40,9 @@ PROLIFIC_API = "https://api.prolific.com/api/v1"
 
 def collect_bonuses(session, config, recompute=True):
     """Return one row per completed participant with the bonus they are owed."""
-    payment = config.payment
+    # The points-to-dollars benchmark can differ by condition (see [Payment by rho]
+    # in config.ini), so each participant is paid with their own slot's condition.
+    slot_conditions = load_slot_conditions(config.assignments_filename) or {}
     score_sd = config.task_settings["score_sd"]
 
     participants = (
@@ -63,7 +66,8 @@ def collect_bonuses(session, config, recompute=True):
         else:
             score, n_rounds = participant.final_score or 0, None
 
-        bonus = compute_bonus(score, payment)
+        rho = slot_conditions.get(1 if participant.slot == 0 else participant.slot)
+        bonus = compute_bonus(score, config.payment_for(rho))
 
         rows.append(
             {

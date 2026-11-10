@@ -25,8 +25,8 @@ let participantFeedback = null;
 const CONFIG = window.TASK_CONFIG;
 
 const sd = CONFIG.score_sd;
-// Forecasts must be typed with exactly this many digits (values are 400-600).
-const FORECAST_DIGITS = 3;
+// Forecasts must be typed with exactly this many digits (values are 10-90).
+const FORECAST_DIGITS = 2;
 const MIN_AR_VALUE = CONFIG.min_ar_value;
 const MAX_AR_VALUE = CONFIG.max_ar_value;
 

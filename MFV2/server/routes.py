@@ -110,6 +110,16 @@ def client_ip():
     return request.remote_addr
 
 
+def rho_for_slot(slot):
+    """Condition (rho) of a slot, from the stimuli file; None if unknown.
+
+    The reserved debug slot 0 is not in the map; it reuses slot 1's stimuli, so it
+    takes slot 1's condition.
+    """
+    conditions = current_app.config.get("SLOT_CONDITIONS") or {}
+    return conditions.get(1 if slot == 0 else slot)
+
+
 def render_error(message, detail=None, status_code=400, show_return_link=False):
     config = _config()
     return (
@@ -249,6 +259,10 @@ def experiment():
         )
 
         task_config = dict(config.task_settings)
+        # The points-to-dollars benchmark can differ by condition; see [Payment by rho].
+        task_config["expected_score_for_payment"] = config.payment_for(
+            rho_for_slot(participant.slot)
+        )["expected_score_for_payment"]
         task_config.update(
             {
                 "uniqueId": participant.uniqueid,
@@ -429,7 +443,9 @@ def api_complete():
 
         participant.final_score = server_score
         participant.bonus_dollars = (
-            0.0 if failed_competency else compute_bonus(server_score, config.payment)
+            0.0
+            if failed_competency
+            else compute_bonus(server_score, config.payment_for(rho_for_slot(participant.slot)))
         )
 
         if failed_competency:

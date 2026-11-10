@@ -85,7 +85,7 @@ function hideSurveyTextButton() {
 
 // Digits only. Length and exact-value checks are separate so the message can
 // be the same red line under the box, shown only when Enter is pressed.
-const MAX_ENTRY_DIGITS = 3;
+const MAX_ENTRY_DIGITS = 2;
 
 // The red line under an entry box (created on first use).
 function getEntryErrorNote(input) {
@@ -545,16 +545,16 @@ function renderCenteredValueScreen(options) {
   let rulerTicksHtml = "";
   let rulerLabelsHtml = "";
 
-  // 21 ticks from MIN to MAX (one every 10 units), every fifth one tall. The
-  // end ticks sit inside the bar so they are not clipped.
-  const TICK_COUNT = 20;
-  const tickStep = (MAX_AR_VALUE - MIN_AR_VALUE) / TICK_COUNT;
-  const LABEL_EVERY = 5;
+  // One tick (and label) at every multiple of 10 from MIN to MAX, nothing in
+  // between. The end ticks sit inside the bar so they are not clipped.
+  const tickStep = 10;
+  const TICK_COUNT = Math.round((MAX_AR_VALUE - MIN_AR_VALUE) / tickStep);
+  const LABEL_EVERY = 1;
 
   for (let tickIndex = 0; tickIndex <= TICK_COUNT; tickIndex++) {
     const tickValue = MIN_AR_VALUE + tickIndex * tickStep;
     const tickPct = valueToPercent(tickValue);
-    const isMajorTick = tickIndex % 5 === 0;
+    const isMajorTick = true;
 
     rulerTicksHtml += `
       <div style="
