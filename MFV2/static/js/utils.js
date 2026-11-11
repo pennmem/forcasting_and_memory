@@ -545,11 +545,11 @@ function renderCenteredValueScreen(options) {
   let rulerTicksHtml = "";
   let rulerLabelsHtml = "";
 
-  // One tick (and label) at every multiple of 10 from MIN to MAX, nothing in
-  // between. The end ticks sit inside the bar so they are not clipped.
+  // One tick at every multiple of 10 from MIN to MAX, nothing in between, but only
+  // the two end values (MIN and MAX) carry a number. The end ticks sit inside the
+  // bar so they are not clipped.
   const tickStep = 10;
   const TICK_COUNT = Math.round((MAX_AR_VALUE - MIN_AR_VALUE) / tickStep);
-  const LABEL_EVERY = 1;
 
   for (let tickIndex = 0; tickIndex <= TICK_COUNT; tickIndex++) {
     const tickValue = MIN_AR_VALUE + tickIndex * tickStep;
@@ -569,7 +569,7 @@ function renderCenteredValueScreen(options) {
       "></div>
     `;
 
-    if (tickIndex % LABEL_EVERY === 0) {
+    if (tickIndex === 0 || tickIndex === TICK_COUNT) {
       rulerLabelsHtml += `
         <div style="
           position: absolute;
